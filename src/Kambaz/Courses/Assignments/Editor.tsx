@@ -7,7 +7,7 @@ export default function AssignmentEditor() {
         The assignment is available online Submit a link to the landing page of your Web application running on Netlify. The landing page should include the following: Your full name and section Links to each of the lab assignments Link to the Kanbas application Links to all relevant source code repositories The Kanbas application should include a link to navigate back to the landing page.
       </textarea>
             <br/>
-            <table border={0} align="center">
+            <table align="center">
                 <tbody>
                 <br></br>
                 <tr>
@@ -108,10 +108,14 @@ export default function AssignmentEditor() {
                 </tbody>
             </table>
             <hr/>
-            <div align="right">
-                <button>Cancel</button>
-                <button>Save</button>
-            </div>
+            <table align="right">
+                <tr>
+                    <td align="right">
+                        <button>Cancel</button>
+                        <button>Save</button>
+                    </td>
+                </tr>
+            </table>
         </div>
     );
 }
