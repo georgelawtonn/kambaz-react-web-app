@@ -1,25 +1,32 @@
 import {Button, Form, FormControl, FormGroup, FormLabel, FormSelect, InputGroup} from "react-bootstrap";
+import {useParams} from "react-router-dom";
+import * as db from "../../Database";
 
 export default function AssignmentEditor() {
+    const {aid} = useParams();
+    const assignment = db.assignments.find(
+        (assignment) => assignment._id === aid
+    );
+
     return (
         <div>
             <FormGroup className="mb-3">
                 <FormLabel>Assignment Name</FormLabel>
-                <FormControl placeholder="A1"/>
+                <FormControl placeholder={assignment?.title}/>
             </FormGroup>
             <FormGroup className="mb-3">
                 <FormControl as="textarea" rows={3}
-                             placeholder="The assignment is available online Submit a link to the landing page of your Web application running on Netlify. The landing page should include the following: Your full name and section Links to each of the lab assignments Link to the Kanbas application Links to all relevant source code repositories The Kanbas application should include a link to navigate back to the landing page."/>
+                             placeholder={assignment?.description}/>
             </FormGroup>
             <FormGroup className="mb-3 d-flex align-items-center">
                 <div className="wd-grid-col-third-page text-end pe-2">
                     Points
                 </div>
                 <div className="wd-grid-col-two-thirds-page">
-                    <FormControl type="number"/>
+                    <FormControl type="number"
+                                 value={assignment?.pts}/>
                 </div>
             </FormGroup>
-
             <FormGroup className="mb-3 d-flex align-items-center">
                 <div className="wd-grid-col-third-page text-end pe-2">
                     Assignment Group
