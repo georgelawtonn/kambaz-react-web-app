@@ -25,7 +25,7 @@ export default function Assignments() {
                     </div>
                     <ListGroup className="wd-lessons rounded-0">
                         {assignments.map((assignment) => (
-                            <ListGroup.Item
+                            <ListGroup.Item  // This shouldn't be accessible by non faculty but assuming that moving forward we will probably implement a different page and navigate based on role so will keep as is for now
                                 as={Link}
                                 to={`/Kambaz/Courses/${cid}/Assignments/${assignment._id}`}
                                 className="wd-lesson p-3 ps-1">

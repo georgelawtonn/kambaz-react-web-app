@@ -1,10 +1,13 @@
 import {IoEllipsisVertical} from "react-icons/io5";
 import GreenCheckmark from "./GreenCheckmark";
+import FacultyProtected from "../../Account/FacultyProtected.tsx";
 
 export default function LessonControlButtons() {
     return (
+        <FacultyProtected>
         <div className="float-end">
             <GreenCheckmark/>
             <IoEllipsisVertical className="fs-4"/>
-        </div>);
+        </div>
+        </FacultyProtected>);
 }
