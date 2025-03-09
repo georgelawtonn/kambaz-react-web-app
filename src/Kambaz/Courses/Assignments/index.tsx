@@ -14,6 +14,19 @@ export default function Assignments() {
         (assignment) => assignment.course === cid
     );
 
+    const formatDueDate = (dateTime: string) => {
+        if (!dateTime) return '';
+        const date = new Date(dateTime);
+        const month = date.toLocaleString('default', { month: 'short'});
+        const day = date.getDay();
+        const time = date.toLocaleString('default', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        }).toLowerCase();
+        return `${month} ${day} at ${time}`
+    }
+
     return (
         <div>
             <AssignmentsControls/><br/><br/><br/><br/>
@@ -37,7 +50,7 @@ export default function Assignments() {
                                            style={{fontSize: '16px', fontWeight: '500'}}>
                                            {assignment.title}
                                         </a>
-                                        <div>Multiple Modules | <strong> Not available until </strong> {assignment.available} | <strong> Due </strong> {assignment.due}  | {assignment.pts} pts</div>
+                                        <div>Multiple Modules | <strong> Due </strong> {formatDueDate(assignment.due)}  | {assignment.pts} pts</div>
                                     </div>
                                     <LessonControlButtons/>
                                 </div>

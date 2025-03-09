@@ -1,4 +1,4 @@
-import {Button, Form, FormControl, FormGroup, FormLabel, FormSelect, InputGroup} from "react-bootstrap";
+import {Button, Form, FormControl, FormGroup, FormLabel, InputGroup} from "react-bootstrap";
 import {useParams} from "react-router-dom";
 import * as db from "../../Database";
 
@@ -27,49 +27,6 @@ export default function AssignmentEditor() {
                                  value={assignment?.pts}/>
                 </div>
             </FormGroup>
-            <FormGroup className="mb-3 d-flex align-items-center">
-                <div className="wd-grid-col-third-page text-end pe-2">
-                    Assignment Group
-                </div>
-                <div className="wd-grid-col-two-thirds-page">
-                    <FormSelect>
-                        <option value="1">ASSIGNMENTS</option>
-                    </FormSelect>
-                </div>
-            </FormGroup>
-
-            <FormGroup className="mb-3 d-flex align-items-center">
-                <div className="wd-grid-col-third-page text-end pe-2">
-                    Display Grade as
-                </div>
-                <div className="wd-grid-col-two-thirds-page">
-                    <FormSelect>
-                        <option value="1">Percentage</option>
-                    </FormSelect>
-                </div>
-            </FormGroup>
-
-            <FormGroup className="mb-3 d-flex">
-                <div className="wd-grid-col-third-page text-end pe-2">
-                    Submission Type
-                </div>
-                <div className="wd-grid-col-two-thirds-page">
-                    <div className="border-grey">
-                        <FormSelect>
-                            <option value="1">Online</option>
-                        </FormSelect><br/>
-                        <div className="p-2">
-                            <strong>Online Entry Options</strong><br/><br/>
-                            <Form.Check label="Text Entry"/><br/>
-                            <Form.Check label="Website URL"/><br/>
-                            <Form.Check label="Media Recordings"/><br/>
-                            <Form.Check label="Student Annotation"/><br/>
-                            <Form.Check label="File Uploads"/><br/>
-                        </div>
-                    </div>
-                </div>
-            </FormGroup>
-
             <FormGroup className="mb-3 d-flex">
                 <div className="wd-grid-col-third-page text-end pe-2">
                     Assign
@@ -77,13 +34,10 @@ export default function AssignmentEditor() {
                 <div className="wd-grid-col-two-thirds-page">
                     <div className="border-grey">
                         <div className="pe-2">
-                            <FormGroup><Form.Label> <strong>Assign to</strong> </Form.Label>
-                                <FormControl placeholder="Everyone"/></FormGroup>
-                            <br/>
                             <FormGroup>
                                 <Form.Label> Due </Form.Label>
                                 <InputGroup>
-                                    <FormControl type="date"/>
+                                    <FormControl type="datetime-local" defaultValue={assignment?.due}/>
                                 </InputGroup>
                             </FormGroup>
 
@@ -91,7 +45,7 @@ export default function AssignmentEditor() {
                                 <FormGroup>
                                     <Form.Label> Available from </Form.Label>
                                     <InputGroup>
-                                        <FormControl type="date"/>
+                                        <FormControl type="datetime-local" defaultValue={assignment?.available_from}/>
                                     </InputGroup>
                                 </FormGroup>
                             </div>
@@ -100,7 +54,7 @@ export default function AssignmentEditor() {
                                 <FormGroup>
                                     <Form.Label> Until </Form.Label>
                                     <InputGroup>
-                                        <FormControl type="date"/>
+                                        <FormControl type="datetime-local" defaultValue={assignment?.available_until}/>
                                     </InputGroup>
                                 </FormGroup>
                             </div>
