@@ -1,24 +1,25 @@
 import AssignmentsControls from "./AssignmentsControls.tsx";
 import {ListGroup} from "react-bootstrap";
 import {BsGripVertical} from "react-icons/bs";
-import LessonControlButtons from "../Modules/LessonControlButtons.tsx";
 import AssignmentControlButtons from "./AssignmentControlButtons.tsx";
 import {FaCaretDown} from "react-icons/fa";
 import AssignmentPredescription from "./AssignmentPredescription.tsx";
 import {Link, useParams} from "react-router-dom";
-import * as db from "../../Database";
+import {useDispatch, useSelector} from "react-redux";
+import ControlButtons from "./ControlButtons.tsx";
+import {deleteAssignment} from "./reducer.ts";
 
 export default function Assignments() {
-    const { cid } = useParams();
-    const assignments = db.assignments.filter(
-        (assignment) => assignment.course === cid
-    );
+    const {cid} = useParams();
+
+    const assignments = useSelector((state: any) => state.assignmentsReducer.assignments)
+        .filter((assignment: any) => assignment.course === cid);
 
     const formatDueDate = (dateTime: string) => {
         if (!dateTime) return '';
         const date = new Date(dateTime);
-        const month = date.toLocaleString('default', { month: 'short'});
-        const day = date.getDay();
+        const month = date.toLocaleString('default', {month: 'short'});
+        const day = date.getDate();
         const time = date.toLocaleString('default', {
             hour: 'numeric',
             minute: '2-digit',
@@ -26,6 +27,8 @@ export default function Assignments() {
         }).toLowerCase();
         return `${month} ${day} at ${time}`
     }
+
+    const dispatch = useDispatch();
 
     return (
         <div>
@@ -37,25 +40,31 @@ export default function Assignments() {
                         <strong>ASSIGNMENTS</strong> <AssignmentControlButtons/>
                     </div>
                     <ListGroup className="wd-lessons rounded-0">
-                        {assignments.map((assignment) => (
-                            <ListGroup.Item  // This shouldn't be accessible by non faculty but assuming that moving forward we will probably implement a different page and navigate based on role so will keep as is for now
-                                as={Link}
-                                to={`/Kambaz/Courses/${cid}/Assignments/${assignment._id}`}
-                                className="wd-lesson p-3 ps-1">
+                        {assignments.map((assignment: any) => (
+                            <ListGroup.Item
+                                className="wd-lesson p-3 ps-1"
+                                key={assignment._id}>
                                 <div>
                                     <AssignmentPredescription/>
                                     <div>
-                                        <a href="/Kambaz/Courses/${cid}/Assignments/${assignment._id}"
-                                           className="wd-assignment-link"
-                                           style={{fontSize: '16px', fontWeight: '500'}}>
-                                           {assignment.title}
-                                        </a>
-                                        <div>Multiple Modules | <strong> Due </strong> {formatDueDate(assignment.due)}  | {assignment.pts} pts</div>
+                                        <Link
+                                            to={`/Kambaz/Courses/${cid}/Assignments/${assignment._id}`}
+                                            className="wd-assignment-link"
+                                            style={{fontSize: '16px', fontWeight: '500'}}>
+                                            {assignment.title}
+                                        </Link>
+                                        <div>Multiple Modules
+                                            | <strong> Due </strong> {formatDueDate(assignment.due)} | {assignment.pts} pts
+                                        </div>
                                     </div>
-                                    <LessonControlButtons/>
+                                    <ControlButtons assignmentId={assignment._id}
+                                                    assignmentTitle={assignment.title}
+                                                    deleteAssignment={(assignmentId) => {
+                                                        dispatch(deleteAssignment(assignmentId));
+                                                    }}/>
                                 </div>
                             </ListGroup.Item>
-                            ))}
+                        ))}
                     </ListGroup>
                 </ListGroup.Item>
             </ListGroup>

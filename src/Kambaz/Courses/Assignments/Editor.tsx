@@ -1,22 +1,55 @@
 import {Button, Form, FormControl, FormGroup, FormLabel, InputGroup} from "react-bootstrap";
-import {useParams} from "react-router-dom";
-import * as db from "../../Database";
+import {useNavigate, useParams} from "react-router-dom";
+import {useDispatch, useSelector} from "react-redux";
+import {useState} from "react";
+import { v4 as uuidv4 } from "uuid";
+import {addAssignment, updateAssignment} from "./reducer.ts";
 
 export default function AssignmentEditor() {
-    const {aid} = useParams();
-    const assignment = db.assignments.find(
-        (assignment) => assignment._id === aid
-    );
+    const {cid, aid} = useParams();
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+
+    const assignment = useSelector((state: any) => state.assignmentsReducer.assignments)
+        .find((assignment: any) => assignment._id === aid);
+
+    const now = new Date().toISOString().slice(0, 16);
+
+    const [assignmentData, setAssignment] = useState({
+        _id: assignment?._id || uuidv4(),
+        title: assignment?.title || "New Assignment",
+        course: assignment?.course || cid,
+        description: assignment?.description || "Assignment description",
+        pts: assignment?.pts || 100,
+        due: assignment?.due || now,
+        available_from: assignment?.available_from || now,
+        available_until: assignment?.available_until || now
+    });
+
+    const handleSave = () => {
+        if (aid === 'new') {
+            dispatch(addAssignment(assignmentData));
+        }
+        else {
+            dispatch(updateAssignment(assignmentData));
+        }
+        navigate(`/Kambaz/Courses/${cid}/Assignments`);
+    }
+
+    const handleCancel = () => {
+        navigate(`/Kambaz/Courses/${cid}/Assignments`);
+    }
 
     return (
         <div>
             <FormGroup className="mb-3">
                 <FormLabel>Assignment Name</FormLabel>
-                <FormControl placeholder={assignment?.title}/>
+                <FormControl defaultValue={assignmentData.title}
+                             onChange={(e) => setAssignment({...assignmentData, title: e.target.value})}/>
             </FormGroup>
             <FormGroup className="mb-3">
-                <FormControl as="textarea" rows={3}
-                             placeholder={assignment?.description}/>
+                <FormControl as="textarea" rows={3} defaultValue={assignmentData.description}
+                             onChange={(e) => setAssignment({...assignmentData, description: e.target.value})}/>
             </FormGroup>
             <FormGroup className="mb-3 d-flex align-items-center">
                 <div className="wd-grid-col-third-page text-end pe-2">
@@ -24,7 +57,8 @@ export default function AssignmentEditor() {
                 </div>
                 <div className="wd-grid-col-two-thirds-page">
                     <FormControl type="number"
-                                 value={assignment?.pts}/>
+                                 defaultValue={assignmentData.pts}
+                                 onChange={(e) => setAssignment({...assignmentData, pts: (parseInt(e.target.value, 10))})}/>
                 </div>
             </FormGroup>
             <FormGroup className="mb-3 d-flex">
@@ -37,7 +71,8 @@ export default function AssignmentEditor() {
                             <FormGroup>
                                 <Form.Label> Due </Form.Label>
                                 <InputGroup>
-                                    <FormControl type="datetime-local" defaultValue={assignment?.due}/>
+                                    <FormControl type="datetime-local" defaultValue={assignmentData.due}
+                                                 onChange={(e) => setAssignment({...assignmentData, due: e.target.value})}/>
                                 </InputGroup>
                             </FormGroup>
 
@@ -45,7 +80,9 @@ export default function AssignmentEditor() {
                                 <FormGroup>
                                     <Form.Label> Available from </Form.Label>
                                     <InputGroup>
-                                        <FormControl type="datetime-local" defaultValue={assignment?.available_from}/>
+                                        <FormControl type="datetime-local"
+                                                     defaultValue={assignmentData.available_from}
+                                                     onChange={(e) => setAssignment({...assignmentData, available_from: e.target.value})}/>
                                     </InputGroup>
                                 </FormGroup>
                             </div>
@@ -54,7 +91,9 @@ export default function AssignmentEditor() {
                                 <FormGroup>
                                     <Form.Label> Until </Form.Label>
                                     <InputGroup>
-                                        <FormControl type="datetime-local" defaultValue={assignment?.available_until}/>
+                                        <FormControl type="datetime-local"
+                                                     defaultValue={assignmentData.available_until}
+                                                     onChange={(e) => setAssignment({...assignmentData, available_until: e.target.value})}/>
                                     </InputGroup>
                                 </FormGroup>
                             </div>
@@ -67,12 +106,11 @@ export default function AssignmentEditor() {
                 </div>
             </FormGroup>
             <hr/>
-            {/*TODO ADD THE LINKS*/}
             <div className="text-nowrap">
-                <Button variant="danger" size="lg" className="me-1 float-end" id="wd-add-module-btn">
+                <Button variant="danger" size="lg" className="me-1 float-end" id="wd-add-module-btn" onClick={handleSave}>
                     Save
                 </Button>
-                <Button variant="secondary" size="lg" className="me-1 float-end" id="wd-view-progress">
+                <Button variant="secondary" size="lg" className="me-1 float-end" id="wd-view-progress" onClick={handleCancel}>
                     Cancel
                 </Button>
             </div>

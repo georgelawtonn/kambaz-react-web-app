@@ -2,12 +2,17 @@ import {FaPlus} from "react-icons/fa6";
 import {Button, FormControl, FormGroup, InputGroup} from "react-bootstrap";
 import {CiSearch} from "react-icons/ci";
 import FacultyProtected from "../../Account/FacultyProtected.tsx";
+import {useNavigate, useParams} from "react-router-dom";
 
 export default function AssignmentsControls() {
+    const navigate = useNavigate();
+    const {cid} = useParams();
+
     return (
         <div className="text-nowrap">
             <FacultyProtected>
-                <Button variant="danger" size="lg" className="me-1 float-end" id="wd-add-module-btn">
+                <Button variant="danger" size="lg" className="me-1 float-end" id="wd-add-module-btn"
+                        onClick={() => navigate(`/Kambaz/Courses/${cid}/Assignments/new`)}>
                     <FaPlus className="position-relative me-2" style={{bottom: "1px"}}/>
                     Assignment
                 </Button>
@@ -31,7 +36,6 @@ export default function AssignmentsControls() {
                                  }}/>
                 </InputGroup>
             </FormGroup>
-
         </div>
     );
 }
