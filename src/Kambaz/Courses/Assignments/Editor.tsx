@@ -2,8 +2,10 @@ import {Button, Form, FormControl, FormGroup, FormLabel, InputGroup} from "react
 import {useNavigate, useParams} from "react-router-dom";
 import {useDispatch, useSelector} from "react-redux";
 import {useState} from "react";
-import { v4 as uuidv4 } from "uuid";
+import {v4 as uuidv4} from "uuid";
 import {addAssignment, updateAssignment} from "./reducer.ts";
+import * as coursesClient from "../client";
+import * as assignmentsClient from "./client";
 
 export default function AssignmentEditor() {
     const {cid, aid} = useParams();
@@ -26,11 +28,13 @@ export default function AssignmentEditor() {
         available_until: assignment?.available_until || now
     });
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        if (!cid) return;
         if (aid === 'new') {
-            dispatch(addAssignment(assignmentData));
-        }
-        else {
+            const newAssignment = await coursesClient.createAssignmentForCourse(cid, assignmentData);
+            dispatch(addAssignment(newAssignment));
+        } else {
+            await assignmentsClient.updateAssignment(assignmentData);
             dispatch(updateAssignment(assignmentData));
         }
         navigate(`/Kambaz/Courses/${cid}/Assignments`);
@@ -58,7 +62,10 @@ export default function AssignmentEditor() {
                 <div className="wd-grid-col-two-thirds-page">
                     <FormControl type="number"
                                  defaultValue={assignmentData.pts}
-                                 onChange={(e) => setAssignment({...assignmentData, pts: (parseInt(e.target.value, 10))})}/>
+                                 onChange={(e) => setAssignment({
+                                     ...assignmentData,
+                                     pts: (parseInt(e.target.value, 10))
+                                 })}/>
                 </div>
             </FormGroup>
             <FormGroup className="mb-3 d-flex">
@@ -72,7 +79,10 @@ export default function AssignmentEditor() {
                                 <Form.Label> Due </Form.Label>
                                 <InputGroup>
                                     <FormControl type="datetime-local" defaultValue={assignmentData.due}
-                                                 onChange={(e) => setAssignment({...assignmentData, due: e.target.value})}/>
+                                                 onChange={(e) => setAssignment({
+                                                     ...assignmentData,
+                                                     due: e.target.value
+                                                 })}/>
                                 </InputGroup>
                             </FormGroup>
 
@@ -82,7 +92,10 @@ export default function AssignmentEditor() {
                                     <InputGroup>
                                         <FormControl type="datetime-local"
                                                      defaultValue={assignmentData.available_from}
-                                                     onChange={(e) => setAssignment({...assignmentData, available_from: e.target.value})}/>
+                                                     onChange={(e) => setAssignment({
+                                                         ...assignmentData,
+                                                         available_from: e.target.value
+                                                     })}/>
                                     </InputGroup>
                                 </FormGroup>
                             </div>
@@ -93,7 +106,10 @@ export default function AssignmentEditor() {
                                     <InputGroup>
                                         <FormControl type="datetime-local"
                                                      defaultValue={assignmentData.available_until}
-                                                     onChange={(e) => setAssignment({...assignmentData, available_until: e.target.value})}/>
+                                                     onChange={(e) => setAssignment({
+                                                         ...assignmentData,
+                                                         available_until: e.target.value
+                                                     })}/>
                                     </InputGroup>
                                 </FormGroup>
                             </div>
@@ -107,10 +123,12 @@ export default function AssignmentEditor() {
             </FormGroup>
             <hr/>
             <div className="text-nowrap">
-                <Button variant="danger" size="lg" className="me-1 float-end" id="wd-add-module-btn" onClick={handleSave}>
+                <Button variant="danger" size="lg" className="me-1 float-end" id="wd-add-module-btn"
+                        onClick={handleSave}>
                     Save
                 </Button>
-                <Button variant="secondary" size="lg" className="me-1 float-end" id="wd-view-progress" onClick={handleCancel}>
+                <Button variant="secondary" size="lg" className="me-1 float-end" id="wd-view-progress"
+                        onClick={handleCancel}>
                     Cancel
                 </Button>
             </div>

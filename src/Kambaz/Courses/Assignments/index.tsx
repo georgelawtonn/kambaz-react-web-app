@@ -7,13 +7,15 @@ import AssignmentPredescription from "./AssignmentPredescription.tsx";
 import {Link, useParams} from "react-router-dom";
 import {useDispatch, useSelector} from "react-redux";
 import ControlButtons from "./ControlButtons.tsx";
-import {deleteAssignment} from "./reducer.ts";
+import {deleteAssignment, setAssignments} from "./reducer.ts";
+import * as coursesClient from "../client";
+import * as assignmentsClient from "./client";
+import {useEffect} from "react";
 
 export default function Assignments() {
     const {cid} = useParams();
 
-    const assignments = useSelector((state: any) => state.assignmentsReducer.assignments)
-        .filter((assignment: any) => assignment.course === cid);
+    const assignments = useSelector((state: any) => state.assignmentsReducer.assignments);
 
     const formatDueDate = (dateTime: string) => {
         if (!dateTime) return '';
@@ -29,6 +31,19 @@ export default function Assignments() {
     }
 
     const dispatch = useDispatch();
+
+    const removeAssignment = async (assignmentId: string) => {
+        await assignmentsClient.deleteAssignment(assignmentId);
+        dispatch(deleteAssignment(assignmentId));
+    };
+
+    const fetchAssignments = async () => {
+        const assignments = await coursesClient.findAssignmentsForCourse(cid as string);
+        dispatch(setAssignments(assignments));
+    };
+    useEffect(() => {
+        fetchAssignments();
+    }, []);
 
     return (
         <div>
@@ -59,9 +74,7 @@ export default function Assignments() {
                                     </div>
                                     <ControlButtons assignmentId={assignment._id}
                                                     assignmentTitle={assignment.title}
-                                                    deleteAssignment={(assignmentId) => {
-                                                        dispatch(deleteAssignment(assignmentId));
-                                                    }}/>
+                                                    deleteAssignment={removeAssignment}/>
                                 </div>
                             </ListGroup.Item>
                         ))}
