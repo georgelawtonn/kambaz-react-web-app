@@ -7,10 +7,15 @@ export const findAllUsers = async () => {
     const response = await axiosWithCredentials.get(USERS_API);
     return response.data;
 };
-export const findMyCourses = async () => {
+export const findMyCourses = async () => { // Why is this different from findCoursesForUser
     const {data} = await axiosWithCredentials.get(`${USERS_API}/current/courses`);
     return data;
 };
+export const findCoursesForUser = async (userId: string) => {
+    const response = await axiosWithCredentials.get(`${USERS_API}/${userId}/courses`);
+    return response.data;
+};
+// Curious why current is used above but not below in update?
 export const signin = async (credentials: any) => {
     const response = await axiosWithCredentials.post(`${USERS_API}/signin`, credentials);
     return response.data;
@@ -35,33 +40,33 @@ export const createCourse = async (course: any) => {
     const {data} = await axiosWithCredentials.post(`${USERS_API}/current/courses`, course);
     return data;
 };
-export const enrollUserInCourse = async (courseId: string) => {
-    const {data} = await axiosWithCredentials.post(`${USERS_API}/current/enrollments/${courseId}`);
-    return data;
-}
-export const unenrollUserFromCourse = async (courseId: string) => {
-    const { data } = await axiosWithCredentials.delete(`${USERS_API}/current/enrollments/${courseId}`);
-    return data;
+export const enrollIntoCourse = async (userId: string, courseId: string) => {
+    const response = await axiosWithCredentials.post(`${USERS_API}/${userId}/courses/${courseId}`);
+    return response.data;
+};
+export const unenrollFromCourse = async (userId: string, courseId: string) => {
+    const response = await axiosWithCredentials.delete(`${USERS_API}/${userId}/courses/${courseId}`);
+    return response.data;
 };
 export const findUsersByRole = async (role: string) => {
     const response = await
-        axios.get(`${USERS_API}?role=${role}`);
+        axiosWithCredentials.get(`${USERS_API}?role=${role}`);
     return response.data;
 };
 export const findUsersByPartialName = async (name: string) => {
-    const response = await axios.get(`${USERS_API}?name=${name}`);
+    const response = await axiosWithCredentials.get(`${USERS_API}?name=${name}`);
     return response.data;
 };
 export const findUserById = async (id: string) => {
-    const response = await axios.get(`${USERS_API}/${id}`);
+    const response = await axiosWithCredentials.get(`${USERS_API}/${id}`);
     return response.data;
 };
 export const deleteUser = async (userId: string) => {
-    const response = await axios.delete( `${USERS_API}/${userId}` );
+    const response = await axiosWithCredentials.delete( `${USERS_API}/${userId}` );
     return response.data;
 };
 export const createUser = async (user: any) => {
-    const response = await axios.post(`${USERS_API}`, user);
+    const response = await axiosWithCredentials.post(`${USERS_API}`, user);
     return response.data;
 };
 

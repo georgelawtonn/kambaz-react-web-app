@@ -1,31 +1,29 @@
 import {Link} from "react-router-dom";
 import {Button, Card, FormControl} from "react-bootstrap";
 import FacultyProtected from "./Account/FacultyProtected.tsx";
-import {useState} from "react";
 import StudentProtected from "./Account/StudentProtected.tsx";
 
 export default function Dashboard({
                                       courses,
-                                      unenrolledCourses,
+                                      enrolling,
+                                      setEnrolling,
                                       addNewCourse,
                                       deleteCourse,
                                       updateCourse,
-                                      deleteEnrollment,
-                                      addEnrollment,
+                                      updateEnrollment,
                                       course,
                                       setCourse
                                   }: {
     courses: any[];
-    unenrolledCourses: any[];
+    enrolling: boolean;
+    setEnrolling: (enrolling: boolean) => void;
     addNewCourse: () => void;
     deleteCourse: (course: any) => void;
     updateCourse: () => void;
-    deleteEnrollment: (course: any) => void;
-    addEnrollment: (course: any) => void;
+    updateEnrollment: (courseId: string, enrolled: boolean) => void;
     course: any;
     setCourse: (course: any) => void;
 }) {
-    const [showEnrolled, setShowEnrolled] = useState(true);
     return (
         <div className="p-4" id="wd-dashboard">
             <h1 id="wd-dashboard-title">Dashboard</h1>
@@ -50,11 +48,9 @@ export default function Dashboard({
             <div className="d-flex justify-content-between align-items-center">
                 <h2 id="wd-dashboard-published">Published Courses ({courses.length})</h2>
                 <StudentProtected>
-                    <Button variant="primary" onClick={() => {
-                        setShowEnrolled(!showEnrolled);
-                    }}>
-                        Enrollments
-                    </Button>
+                    <button onClick={() => setEnrolling(!enrolling)} className="float-end btn btn-primary">
+                        {enrolling ? "My Courses" : "All Courses"}
+                    </button>
                 </StudentProtected>
             </div>
             <hr/>
@@ -97,14 +93,24 @@ export default function Dashboard({
                                                 </FacultyProtected>
 
                                                 <StudentProtected>
-                                                    <button id="wd-delete-enrollment-click"
+                                                    {/*<button id="wd-delete-enrollment-click"*/}
+                                                    {/*        onClick={(event) => {*/}
+                                                    {/*            event.preventDefault();*/}
+                                                    {/*            deleteEnrollment(course._id);*/}
+                                                    {/*        }}*/}
+                                                    {/*        className="btn btn-danger me-2 float-end">*/}
+                                                    {/*    Unenroll*/}
+                                                    {/*</button>*/}
+                                                    {enrolling && (
+                                                        <button
                                                             onClick={(event) => {
                                                                 event.preventDefault();
-                                                                deleteEnrollment(course._id);
+                                                                updateEnrollment(course._id, !course.enrolled);
                                                             }}
-                                                            className="btn btn-danger me-2 float-end">
-                                                        Unenroll
-                                                    </button>
+                                                            className={`btn ${course.enrolled ? "btn-danger" : "btn-success"} float-end`}>
+                                                            {course.enrolled ? "Unenroll" : "Enroll"}
+                                                        </button>
+                                                    )}
                                                 </StudentProtected>
                                             </Card.Body>
                                         </Link>
@@ -112,52 +118,52 @@ export default function Dashboard({
                                 </div>
                             </div>
                         ))}
-                    {!showEnrolled && unenrolledCourses
-                        .map((course: any) => (
-                            <div key={course._id} className="col" style={{width: "300px"}}>
-                                <div className="card">
-                                    <Card>
-                                        <Card.Img src="/images/reactjs.jpg" variant="top" width="100%"
-                                                  height={160}/>
-                                        <Card.Body className="card-body">
-                                            <Card.Title
-                                                className="wd-dashboard-course-title text-nowrap overflow-hidden">
-                                                {course.name} </Card.Title>
-                                            <Card.Text className="wd-dashboard-course-description overflow-hidden"
-                                                       style={{height: "100px"}}>
-                                                {course.description} </Card.Text>
-                                            {/*Only Displays To Students Regardless AS OF NOW*/}
-                                            {/*<FacultyProtected>*/}
-                                            {/*    <button onClick={(event) => {*/}
-                                            {/*        event.preventDefault();*/}
-                                            {/*        deleteCourse(course._id);*/}
-                                            {/*    }} className="btn btn-danger float-end"*/}
-                                            {/*            id="wd-delete-course-click">*/}
-                                            {/*        Delete*/}
-                                            {/*    </button>*/}
-                                            {/*    <button id="wd-edit-course-click"*/}
-                                            {/*            onClick={(event) => {*/}
-                                            {/*                event.preventDefault();*/}
-                                            {/*                setCourse(course);*/}
-                                            {/*            }}*/}
-                                            {/*            className="btn btn-warning me-2 float-end">*/}
-                                            {/*        Edit*/}
-                                            {/*    </button>*/}
-                                            {/*</FacultyProtected>*/}
-                                            <StudentProtected>
-                                                <button id="wd-add-enrollment-click"
-                                                        onClick={(event) => {
-                                                            event.preventDefault();
-                                                            addEnrollment(course._id)
-                                                        }} className="btn btn-success float-end">
-                                                    Enroll
-                                                </button>
-                                            </StudentProtected>
-                                        </Card.Body>
-                                    </Card>
-                                </div>
-                            </div>
-                        ))}
+                    {/*{!showEnrolled && unenrolledCourses*/}
+                    {/*    .map((course: any) => (*/}
+                    {/*        <div key={course._id} className="col" style={{width: "300px"}}>*/}
+                    {/*            <div className="card">*/}
+                    {/*                <Card>*/}
+                    {/*                    <Card.Img src="/images/reactjs.jpg" variant="top" width="100%"*/}
+                    {/*                              height={160}/>*/}
+                    {/*                    <Card.Body className="card-body">*/}
+                    {/*                        <Card.Title*/}
+                    {/*                            className="wd-dashboard-course-title text-nowrap overflow-hidden">*/}
+                    {/*                            {course.name} </Card.Title>*/}
+                    {/*                        <Card.Text className="wd-dashboard-course-description overflow-hidden"*/}
+                    {/*                                   style={{height: "100px"}}>*/}
+                    {/*                            {course.description} </Card.Text>*/}
+                    {/*                        /!*Only Displays To Students Regardless AS OF NOW*!/*/}
+                    {/*                        /!*<FacultyProtected>*!/*/}
+                    {/*                        /!*    <button onClick={(event) => {*!/*/}
+                    {/*                        /!*        event.preventDefault();*!/*/}
+                    {/*                        /!*        deleteCourse(course._id);*!/*/}
+                    {/*                        /!*    }} className="btn btn-danger float-end"*!/*/}
+                    {/*                        /!*            id="wd-delete-course-click">*!/*/}
+                    {/*                        /!*        Delete*!/*/}
+                    {/*                        /!*    </button>*!/*/}
+                    {/*                        /!*    <button id="wd-edit-course-click"*!/*/}
+                    {/*                        /!*            onClick={(event) => {*!/*/}
+                    {/*                        /!*                event.preventDefault();*!/*/}
+                    {/*                        /!*                setCourse(course);*!/*/}
+                    {/*                        /!*            }}*!/*/}
+                    {/*                        /!*            className="btn btn-warning me-2 float-end">*!/*/}
+                    {/*                        /!*        Edit*!/*/}
+                    {/*                        /!*    </button>*!/*/}
+                    {/*                        /!*</FacultyProtected>*!/*/}
+                    {/*                        <StudentProtected>*/}
+                    {/*                            <button id="wd-add-enrollment-click"*/}
+                    {/*                                    onClick={(event) => {*/}
+                    {/*                                        event.preventDefault();*/}
+                    {/*                                        addEnrollment(course._id)*/}
+                    {/*                                    }} className="btn btn-success float-end">*/}
+                    {/*                                Enroll*/}
+                    {/*                            </button>*/}
+                    {/*                        </StudentProtected>*/}
+                    {/*                    </Card.Body>*/}
+                    {/*                </Card>*/}
+                    {/*            </div>*/}
+                    {/*        </div>*/}
+                    {/*    ))}*/}
                 </div>
             </div>
         </div>
