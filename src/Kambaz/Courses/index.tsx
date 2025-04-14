@@ -11,11 +11,14 @@ import {useParams} from "react-router-dom";
 import {useSelector} from "react-redux";
 import {useEffect, useState} from "react";
 import * as courseClient from "./client.ts";
+import Quizzes from "./Quizzes";
+import QuizEditor from "./Quizzes/QuizEditor.tsx";
+import QuizDetail from "./Quizzes/QuizDetail.tsx";
 
 export default function Courses() {
     const {cid} = useParams();
     const courses = useSelector((state: any) => state.courseReducer.courses);
-    const course = courses.find((course: any) => course._id === cid);
+    let course = courses.find((course: any) => course._id === cid);
     const { pathname } = useLocation();
     const [users, setUsers] = useState<any[]>([]);
 
@@ -25,8 +28,15 @@ export default function Courses() {
             setUsers(users);
         }
     };
+    const fetchCourse = async () => {
+        if (cid) {
+            course = await courseClient.fetchCourseById(cid);
+            setUsers(users);
+        }
+    }
     useEffect(() => {
         fetchUsers();
+        fetchCourse();
     }, [cid]);
 
     return (
@@ -46,6 +56,9 @@ export default function Courses() {
                         <Route path="Modules" element={<Modules/>}/>
                         <Route path="Assignments" element={<Assignments/>}/>
                         <Route path="Assignments/:aid" element={<AssignmentEditor/>}/>
+                        <Route path="Quizzes" element={<Quizzes/>}/>
+                        <Route path="Quizzes/:qid/edit" element={<QuizEditor/>}/>
+                        <Route path="Quizzes/:qid/view" element={<QuizDetail/>}/>
                         <Route path="People" element={<PeopleTable users={users}/>}/>
                     </Routes>
                 </div>
