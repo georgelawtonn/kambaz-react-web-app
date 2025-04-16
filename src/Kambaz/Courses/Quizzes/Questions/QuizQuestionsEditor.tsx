@@ -20,36 +20,8 @@ import QuestionTypeSelector from "./QuestionTypeSelector.tsx";
 import React from "react";
 import FIBQuestionComponent from "./FIBQuestionComponent.tsx";
 
-// Placeholder component before a question is edited and made into one of the 3 (MC, TF, FIB)
-function QuestionPlaceholder({ question, onDelete }: { question: Question; onDelete: (id: string) => void }) {
-    return (
-        <div className="question-item mb-3 p-3 border rounded">
-            <h4>{question.title} ({question.points} pts)</h4>
-            <p>{question.question || "No question text yet"}</p>
-            <p>Type: {question.type}</p>
-
-            <p>PLACEHOLDER QUESTION</p>
-
-            <div className="mt-2">
-                <Button
-                    variant="outline-primary"
-                    size="sm"
-                    className="me-2"
-                    onClick={() => { /* Handle edit */ }}>
-                    Edit
-                </Button>
-                <Button
-                    variant="outline-danger"
-                    size="sm"
-                    onClick={() => onDelete(question.id)}>
-                    Delete
-                </Button>
-            </div>
-        </div>
-    );
-}
-
-export default function QuizQuestionsContainer({quizData}: { quizData: any; }) {
+// Main component that holds all questions, and manages communication with redux
+export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { cid, qid } = useParams();
@@ -57,16 +29,16 @@ export default function QuizQuestionsContainer({quizData}: { quizData: any; }) {
     // get draft questions from Redux
     const draftQuestions = useSelector((state: any) => state.quizzesReducer.draftQuestions);
 
-    // Get the actual quiz if we're editing an existing one
+    // get the actual quiz if editing an existing one
     const quiz = useSelector((state: any) =>
         qid !== 'new' ? state.quizzesReducer.quizzes.find((q: any) => q._id === qid) : null
     );
 
-    // Determine which questions to display based on if we're editing a new or existing quiz
+    // determine which questions to display based on if quiz is new or not
     const isNewQuiz = qid === 'new';
     const displayQuestions = isNewQuiz ? draftQuestions : (quiz?.questions || []);
 
-    // Calculate total points
+    // calculate total points
     const totalPoints = displayQuestions.reduce((sum: number, q: any) => sum + (q.points || 1), 0);
 
     // helper function to update question
@@ -268,14 +240,7 @@ export default function QuizQuestionsContainer({quizData}: { quizData: any; }) {
                         onSave={handleSaveQuestion}
                         onCancel={handleCancelEdit}
                     />
-                </div>)
-            default:
-                return (
-                    <QuestionPlaceholder
-                        question={question}
-                        onDelete={handleDeleteQuestion}
-                    />
-                );
+                </div>);
         }
     };
 
