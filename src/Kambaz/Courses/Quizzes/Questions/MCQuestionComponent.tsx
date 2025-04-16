@@ -79,23 +79,31 @@ export default function MCQuestionComponent({
                 <h4>Edit Multiple Choice Question</h4>
 
                 <Form>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Question Title</Form.Label>
-                        <Form.Control
-                            type="text"
-                            value={editedQuestion.title}
-                            onChange={(e) => updateField('title', e.target.value)}
-                        />
-                    </Form.Group>
+                    {/* Title & Points */}
+                    <div className="d-flex align-items-end mb-3">
+                        <Form.Group className="me-3 flex-grow-1">
+                            <Form.Label>Question Title</Form.Label>
+                            <Form.Control
+                                type="text"
+                                value={editedQuestion.title}
+                                onChange={(e) => updateField('title', e.target.value)}
+                            />
+                        </Form.Group>
 
-                    <Form.Group className="mb-3">
-                        <Form.Label>Points</Form.Label>
-                        <Form.Control
-                            type="number"
-                            value={editedQuestion.points}
-                            onChange={(e) => updateField('points', parseInt(e.target.value) || 0)}
-                        />
-                    </Form.Group>
+                        <Form.Group style={{width: '100px'}}>
+                            <Form.Label>Points</Form.Label>
+                            <Form.Control
+                                type="number"
+                                size="sm"
+                                value={editedQuestion.points}
+                                onChange={(e) => {
+                                    // Convert to number and handle empty case
+                                    const numValue = e.target.value === '' ? 0 : Number(e.target.value);
+                                    updateField('points', numValue);
+                                }}
+                            />
+                        </Form.Group>
+                    </div>
 
                     <Form.Group className="mb-3">
                         <Form.Label>Question Text</Form.Label>
@@ -103,6 +111,7 @@ export default function MCQuestionComponent({
                             as="textarea"
                             rows={3}
                             value={editedQuestion.question}
+                            placeholder="Enter your question and multiple answers, then select the one correct answer."
                             onChange={(e) => updateField('question', e.target.value)}
                         />
                     </Form.Group>
@@ -162,19 +171,17 @@ export default function MCQuestionComponent({
                         </div>
                     </Form.Group>
 
-                    <div className="mt-3">
-                        <Button
-                            variant="primary"
-                            className="me-2"
-                            onClick={handleSave}
-                        >
-                            Save Question
-                        </Button>
+                    <div className="me-2">
                         <Button
                             variant="secondary"
-                            onClick={handleCancel}
-                        >
+                            className="me-2"
+                            onClick={handleCancel}>
                             Cancel
+                        </Button>
+                        <Button
+                            variant="danger"
+                            onClick={handleSave}>
+                            Save Question
                         </Button>
                     </div>
                 </Form>
@@ -185,7 +192,12 @@ export default function MCQuestionComponent({
     // Render the preview mode
     return (
         <div className="question-item mb-3 p-3 border rounded">
-            <h4>{question.title} ({question.points} pts)</h4>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+                <h4>{question.title}</h4>
+                <span className="badge bg-secondary fs-5 px-3 py-2">
+                  {question.points} {question.points === 1 ? 'point' : 'points'}
+                </span>
+            </div>
             <p>{question.question || "No question text yet"}</p>
 
             <div className="choices-list">
@@ -210,11 +222,10 @@ export default function MCQuestionComponent({
 
             <div className="mt-2">
                 <Button
-                    variant="outline-primary"
+                    variant="primary"
                     size="sm"
                     className="me-2"
-                    onClick={() => onEdit(question.id)}
-                >
+                    onClick={() => onEdit(question.id)}>
                     Edit
                 </Button>
                 <Button

@@ -45,29 +45,38 @@ export default function TFQuestionComponent({
                 <h4>Edit True/False Question</h4>
 
                 <Form>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Question Title</Form.Label>
-                        <Form.Control
-                            type="text"
-                            value={editedQuestion.title}
-                            onChange={(e) => updateField('title', e.target.value)}
-                        />
-                    </Form.Group>
+                    {/* Title & Points */}
+                    <div className="d-flex align-items-end mb-3">
+                        <Form.Group className="me-3 flex-grow-1">
+                            <Form.Label>Question Title</Form.Label>
+                            <Form.Control
+                                type="text"
+                                value={editedQuestion.title}
+                                onChange={(e) => updateField('title', e.target.value)}
+                            />
+                        </Form.Group>
 
-                    <Form.Group className="mb-3">
-                        <Form.Label>Points</Form.Label>
-                        <Form.Control
-                            type="number"
-                            value={editedQuestion.points}
-                            onChange={(e) => updateField('points', parseInt(e.target.value) || 0)}
-                        />
-                    </Form.Group>
+                        <Form.Group style={{width: '100px'}}>
+                            <Form.Label>Points</Form.Label>
+                            <Form.Control
+                                type="number"
+                                size="sm"
+                                value={editedQuestion.points}
+                                onChange={(e) => {
+                                    // Convert to number and handle empty case
+                                    const numValue = e.target.value === '' ? 0 : Number(e.target.value);
+                                    updateField('points', numValue);
+                                }}
+                            />
+                        </Form.Group>
+                    </div>
 
                     <Form.Group className="mb-3">
                         <Form.Label>Question Text</Form.Label>
                         <Form.Control
                             as="textarea"
                             rows={3}
+                            placeholder="Enter your question text, then select if True or False is the correct answer."
                             value={editedQuestion.question}
                             onChange={(e) => updateField('question', e.target.value)}
                         />
@@ -98,17 +107,15 @@ export default function TFQuestionComponent({
 
                     <div className="mt-3">
                         <Button
-                            variant="primary"
+                            variant="secondary"
                             className="me-2"
-                            onClick={handleSave}
-                        >
-                            Save Question
+                            onClick={handleCancel}>
+                            Cancel
                         </Button>
                         <Button
-                            variant="secondary"
-                            onClick={handleCancel}
-                        >
-                            Cancel
+                            variant="danger"
+                            onClick={handleSave}>
+                            Save Question
                         </Button>
                     </div>
                 </Form>
@@ -119,7 +126,12 @@ export default function TFQuestionComponent({
     // Render the preview mode
     return (
         <div className="question-item mb-3 p-3 border rounded">
-            <h4>{question.title} ({question.points} pts)</h4>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+                <h4>{question.title}</h4>
+                <span className="badge bg-secondary fs-5 px-3 py-2">
+                  {question.points} {question.points === 1 ? 'point' : 'points'}
+                </span>
+            </div>
             <p>{question.question || "No question text yet"}</p>
 
             <div className="choices-list">
@@ -149,7 +161,7 @@ export default function TFQuestionComponent({
 
             <div className="mt-2">
                 <Button
-                    variant="outline-primary"
+                    variant="primary"
                     size="sm"
                     className="me-2"
                     onClick={() => onEdit(question.id)}

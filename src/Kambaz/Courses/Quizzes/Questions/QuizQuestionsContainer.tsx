@@ -13,9 +13,12 @@ import {
     addQuestionToQuiz
 } from '../reducer';
 import * as coursesClient from "../../client.ts";
-import {Question, MultipleChoiceQuestion, TrueFalseQuestion} from './QuestionTypes';
+import {Question, MultipleChoiceQuestion, TrueFalseQuestion, BaseQuestion, FillInBlankQuestion} from './QuestionTypes';
 import MCQuestionComponent from "./MCQuestionComponent.tsx";
 import TFQuestionComponent from "./TFQuestionComponent.tsx";
+import QuestionTypeSelector from "./QuestionTypeSelector.tsx";
+import React from "react";
+import FIBQuestionComponent from "./FIBQuestionComponent.tsx";
 
 // Placeholder component before a question is edited and made into one of the 3 (MC, TF, FIB)
 function QuestionPlaceholder({ question, onDelete }: { question: Question; onDelete: (id: string) => void }) {
@@ -101,8 +104,6 @@ export default function QuizQuestionsContainer({quizData}: { quizData: any; }) {
 
     // when '+ new question' is clicked
     const handleAddQuestion = () => {
-        // Create new question as draft (multiple choice default)
-        /*
         const newQuestion: MultipleChoiceQuestion = {
             id: Date.now().toString(),
             title: `Question ${draftQuestions.length + 1 || 1}`,
@@ -110,18 +111,6 @@ export default function QuizQuestionsContainer({quizData}: { quizData: any; }) {
             points: 1,
             question: '',
             choices: [],
-            correctAnswer: null,
-            isEditing: false
-        };
-         */
-
-        // remove this and do ^^
-        const newQuestion: TrueFalseQuestion = {
-            id: Date.now().toString(),
-            title: `Question ${draftQuestions.length + 1 || 1}`,
-            type: 'true_false',
-            points: 1,
-            question: '',
             correctAnswer: null,
             isEditing: false
         };
@@ -135,10 +124,11 @@ export default function QuizQuestionsContainer({quizData}: { quizData: any; }) {
 
     // when 'Delete' is clicked, for a specific question
     const handleDeleteQuestion = (questionId: string) => {
+        const q = displayQuestions.find((q: Question) => q.id === questionId);
         if (isNewQuiz) { // Remove from draft questions
-            dispatch(removeDraftQuestion(questionId));
+            dispatch(removeDraftQuestion(q));
         } else { // Remove from redux quiz list of questions
-            dispatch(removeQuestionFromQuiz(questionId));
+            dispatch(removeQuestionFromQuiz(q));
         }
     };
 
@@ -176,53 +166,128 @@ export default function QuizQuestionsContainer({quizData}: { quizData: any; }) {
         pushQuestionUpdate(updatedQuestionNotEditing);
     };
 
+    // To swap between question components (when using dropdown selector)
+    const handleQuestionTypeChange = (questionId: string, newType: 'multiple_choice' | 'true_false' | 'fill_in_blank') => {
+        // Find current question
+        const question = isNewQuiz
+            ? draftQuestions.find((q: Question) => q.id === questionId) // if in drafts
+            : quiz.questions.find((q: Question) => q.id === questionId); // if in quiz
+
+        if (!question) return;
+
+        // Extract base properties from the existing question
+        const baseProps: BaseQuestion = {
+            id: question.id,
+            title: question.title,
+            type: newType, // Update the type
+            points: question.points,
+            question: question.question,
+            isEditing: question.isEditing
+        };
+
+        // Create a new question of the target type
+        let convertedQuestion: Question;
+
+        switch (newType) {
+            case 'multiple_choice':
+                convertedQuestion = {
+                    ...baseProps,
+                    type: 'multiple_choice',
+                    choices: [],
+                    correctAnswer: null
+                };
+                break;
+            case 'true_false':
+                convertedQuestion = {
+                    ...baseProps,
+                    type: 'true_false',
+                    correctAnswer: null
+                };
+                break;
+            case 'fill_in_blank':
+                convertedQuestion = {
+                    ...baseProps,
+                    type: 'fill_in_blank',
+                    answers: [],
+                    caseSensitive: false
+                };
+                break;
+        }
+
+        // Replace the question in the appropriate state
+        pushQuestionUpdate(convertedQuestion);
+    };
+
+    // Figures out which question component to render
     const renderQuestionComponent = (question: Question) => {
         switch (question.type) {
             case 'multiple_choice':
                 return (
-                    <MCQuestionComponent
+                    <div className="question-container">
+                        <QuestionTypeSelector
+                            currentType={question.type}
+                            onTypeChange={(newType) => handleQuestionTypeChange(question.id, newType)}
+                        />
+                        <MCQuestionComponent
+                            key={question.id}
+                            question={question as MultipleChoiceQuestion}
+                            onDelete={handleDeleteQuestion}
+                            onEdit={handleEditQuestion}
+                            onSave={handleSaveQuestion}
+                            onCancel={handleCancelEdit}
+                        />
+                    </div>
+                );
+            case 'true_false':
+                return (
+                    <div className="question-container">
+                        <QuestionTypeSelector
+                            currentType={question.type}
+                            onTypeChange={(newType) => handleQuestionTypeChange(question.id, newType)}
+                        />
+                        <TFQuestionComponent
+                            key={question.id}
+                            question={question as TrueFalseQuestion}
+                            onDelete={handleDeleteQuestion}
+                            onEdit={handleEditQuestion}
+                            onSave={handleSaveQuestion}
+                            onCancel={handleCancelEdit}/>
+                    </div>
+                )
+            case 'fill_in_blank':
+                return (<div className="question-container">
+                    <QuestionTypeSelector
+                        currentType={question.type}
+                        onTypeChange={(newType) => handleQuestionTypeChange(question.id, newType)}
+                    />
+                    <FIBQuestionComponent
                         key={question.id}
-                        question={question as MultipleChoiceQuestion}
+                        question={question as FillInBlankQuestion}
                         onDelete={handleDeleteQuestion}
                         onEdit={handleEditQuestion}
                         onSave={handleSaveQuestion}
                         onCancel={handleCancelEdit}
                     />
-                );
-            case 'true_false':
-                return (
-                    <TFQuestionComponent
-                        key={question.id}
-                        question={question as TrueFalseQuestion}
-                        onDelete={handleDeleteQuestion}
-                        onEdit={handleEditQuestion}
-                        onSave={handleSaveQuestion}
-                        onCancel={handleCancelEdit}/>
-                )
+                </div>)
             default:
                 return (
                     <QuestionPlaceholder
-                        key={question.id}
                         question={question}
                         onDelete={handleDeleteQuestion}
-                        // onEdit={handleEditQuestion}
                     />
                 );
         }
     };
 
-    /*
-// Clear drafts when component unmounts (optional)
-React.useEffect(() => {
-    // If we're creating a new quiz, clear drafts when component unmounts
-    return () => {
-        if (isNewQuiz) {
-            // Uncomment this if you want to clear drafts on unmount
-            // dispatch(clearDraftQuestions());
-        }
-    };
-}, [isNewQuiz, dispatch]);
-*/
+    // Clear drafts when leaving page
+    React.useEffect(() => {
+        return () => {
+            if (isNewQuiz) {
+                dispatch(clearDraftQuestions());
+            }
+        };
+    }, [isNewQuiz, dispatch]);
+
     return (
         <div className="quiz-questions-container">
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -267,7 +332,4 @@ React.useEffect(() => {
     );
 }
 
-// TODO: add save & cancel buttons
-// -- cancel, remove all drafts, navigate to quizzes
-// -- save, push all drafts to quiz? create new quiz id?, navigate back
 // TODO: alert when leaving (save or cancel?)

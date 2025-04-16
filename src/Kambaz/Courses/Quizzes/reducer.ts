@@ -1,9 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
-// import Question from "./Questions/QuestionTypes.tsx"
+import {Question} from "./Questions/QuestionTypes.tsx";
 
 const initialState = {
     quizzes: [] as any[],
-    draftQuestions: [] as any[],
+    draftQuestions: [] as Question[],
 };
 
 const quizzesSlice = createSlice({
