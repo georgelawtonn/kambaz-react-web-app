@@ -4,6 +4,7 @@ import QuizDetailEditor from './QuizDetailEditor';
 import {useSelector} from "react-redux";
 import {v4 as uuidv4} from "uuid";
 import {useParams} from "react-router-dom";
+import QuizQuestionsContainer from "./Questions/QuizQuestionsContainer.tsx";
 
 export default function QuizEditor() {
     const [activeTab, setActiveTab] = useState('details');
@@ -73,7 +74,7 @@ export default function QuizEditor() {
                 </Nav.Item>
             </Nav>
             {activeTab === 'details' && <QuizDetailEditor quizData={quizData} setQuizData={setQuizData}/>}
-            {activeTab === 'questions'}
+            {activeTab === 'questions' && <QuizQuestionsContainer/>}
         </div>
     );
 }

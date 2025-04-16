@@ -1,7 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
+// import Question from "./Questions/QuestionTypes.tsx"
 
 const initialState = {
     quizzes: [] as any[],
+    draftQuestions: [] as any[],
 };
 
 const quizzesSlice = createSlice({
@@ -55,8 +57,10 @@ const quizzesSlice = createSlice({
             );
         },
         addQuestionToQuiz: (state, { payload: { quizId, question } }) => {
+            console.log("in reducer:" + quizId, question);
             state.quizzes = state.quizzes.map((q: any) => {
                 if (q._id === quizId) {
+                    console.log("adding...");
                     return {
                         ...q,
                         questions: [...q.questions, question],
@@ -95,6 +99,52 @@ const quizzesSlice = createSlice({
                 }
                 return q;
             });
+        },
+
+        addDraftQuestion: (state, { payload: question }) => {
+            console.log("Adding draft question: " + question);
+            state.draftQuestions.push(question);
+        },
+
+        updateDraftQuestion: (state, { payload: { questionId, updatedQuestion } }) => {
+            state.draftQuestions = state.draftQuestions.map((q: any) =>
+                q.id === questionId ? { ...q, ...updatedQuestion } : q
+            );
+        },
+
+        removeDraftQuestion: (state, { payload: questionId }) => {
+            state.draftQuestions = state.draftQuestions.filter((q: any) => q.id !== questionId);
+        },
+
+        clearDraftQuestions: (state) => {
+            state.draftQuestions = [];
+        },
+
+        // Add a helper action to transfer draft questions to a real quiz
+        transferDraftQuestionsToQuiz: (state, { payload: quizId }) => {
+            // Find the quiz to update
+            const quizIndex = state.quizzes.findIndex((q: any) => q._id === quizId);
+
+            if (quizIndex !== -1) {
+                // Calculate additional points
+                const additionalPoints = state.draftQuestions.reduce(
+                    (sum: number, question: any) => sum + (question.points || 1),
+                    0
+                );
+
+                // Add all draft questions to the quiz
+                state.quizzes[quizIndex] = {
+                    ...state.quizzes[quizIndex],
+                    questions: [
+                        ...state.quizzes[quizIndex].questions,
+                        ...state.draftQuestions
+                    ],
+                    points: state.quizzes[quizIndex].points + additionalPoints
+                };
+
+                // Clear the draft questions
+                state.draftQuestions = [];
+            }
         }
     },
 });
@@ -107,7 +157,13 @@ export const {
     publishQuiz,
     addQuestionToQuiz,
     updateQuestionInQuiz,
-    removeQuestionFromQuiz
+    removeQuestionFromQuiz,
+    // actions to edit local questions before any "Save" button is clicked (at which point they get update to real quiz)
+    addDraftQuestion,
+    updateDraftQuestion,
+    removeDraftQuestion,
+    clearDraftQuestions,
+    transferDraftQuestionsToQuiz
 } = quizzesSlice.actions;
 
 export default quizzesSlice.reducer;
