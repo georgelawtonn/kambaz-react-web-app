@@ -71,29 +71,30 @@ const quizzesSlice = createSlice({
             });
         },
         updateQuestionInQuiz: (state, { payload: { quizId, question } }) => {
-            state.quizzes = state.quizzes.map((q: any) => {
-                if (q._id === quizId) {
-                    const oldQuestion = q.questions.find((qq: any) => qq._id === question._id);
+            state.quizzes = state.quizzes.map((quiz: any) => {
+                if (quiz._id === quizId) {
+                    // uh not sure about these 2 lines
+                    const oldQuestion = quiz.questions.find((q: any) => q._id === question._id);
                     const pointsDifference = (question.points || 1) - (oldQuestion?.points || 1);
 
                     return {
-                        ...q,
-                        questions: q.questions.map((qq: any) =>
-                            qq._id === question._id ? question : qq
+                        ...quiz,
+                        questions: quiz.questions.map((q: any) =>
+                            q._id === question._id ? question : q
                         ),
-                        points: q.points + pointsDifference
+                        points: quiz.points + pointsDifference
                     };
                 }
-                return q;
+                return quiz;
             });
         },
-        removeQuestionFromQuiz: (state, { payload: { quizId, questionId } }) => {
+        removeQuestionFromQuiz: (state, { payload: { quizId, question } }) => {
             state.quizzes = state.quizzes.map((q: any) => {
                 if (q._id === quizId) {
-                    const questionToRemove = q.questions.find((qq: any) => qq._id === questionId);
+                    const questionToRemove = q.questions.find((qq: any) => qq._id === question.id);
                     return {
                         ...q,
-                        questions: q.questions.filter((qq: any) => qq._id !== questionId),
+                        questions: q.questions.filter((qq: any) => qq._id !== question.id),
                         points: q.points - (questionToRemove?.points || 1)
                     };
                 }
@@ -106,14 +107,14 @@ const quizzesSlice = createSlice({
             state.draftQuestions.push(question);
         },
 
-        updateDraftQuestion: (state, { payload: { questionId, updatedQuestion } }) => {
-            state.draftQuestions = state.draftQuestions.map((q: any) =>
-                q.id === questionId ? { ...q, ...updatedQuestion } : q
+        updateDraftQuestion: (state, { payload: question }) => {
+            state.draftQuestions = state.draftQuestions.map((q) =>
+                q.id === question.id ? question : q
             );
         },
 
-        removeDraftQuestion: (state, { payload: questionId }) => {
-            state.draftQuestions = state.draftQuestions.filter((q: any) => q.id !== questionId);
+        removeDraftQuestion: (state, { payload: question }) => {
+            state.draftQuestions = state.draftQuestions.filter((q: any) => q.id !== question.id);
         },
 
         clearDraftQuestions: (state) => {
