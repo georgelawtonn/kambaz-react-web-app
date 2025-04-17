@@ -1,5 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import {Question} from "./Questions/QuestionTypes.tsx";
+import {v4 as uuidv4} from "uuid";
 
 const initialState = {
     quizzes: [] as any[],
@@ -14,6 +15,7 @@ const quizzesSlice = createSlice({
             state.quizzes = action.payload;
         },
         addQuiz: (state, { payload: quiz }) => {
+            console.log("new quiz id (from reducer): " + quiz._id)
             const now = new Date().toISOString();
             const newQuiz = {
                 title: quiz.title || "New Quiz",
@@ -73,7 +75,7 @@ const quizzesSlice = createSlice({
         updateQuestionInQuiz: (state, { payload: { quizId, question } }) => {
             state.quizzes = state.quizzes.map((quiz: any) => {
                 if (quiz._id === quizId) {
-                    // uh not sure about these 2 lines
+                    // calculate new points
                     const oldQuestion = quiz.questions.find((q: any) => q._id === question._id);
                     const pointsDifference = (question.points || 1) - (oldQuestion?.points || 1);
 
@@ -103,7 +105,6 @@ const quizzesSlice = createSlice({
         },
 
         addDraftQuestion: (state, { payload: question }) => {
-            console.log("Adding draft question: " + question);
             state.draftQuestions.push(question);
         },
 
@@ -121,11 +122,51 @@ const quizzesSlice = createSlice({
             state.draftQuestions = [];
         },
 
+        // Convert all to drafts when starting editing
+        // Add this to your reducer slice
+        convertQuizToDrafts: (state, { payload: quizId }) => {
+            // Find the quiz to convert
+            const quizIndex = state.quizzes.findIndex((q) => q._id === quizId);
+
+            if (quizIndex !== -1 && state.quizzes[quizIndex].questions) {
+                const quiz = state.quizzes[quizIndex];
+
+                // Calculate points to subtract from the quiz
+                const pointsToSubtract = quiz.questions.reduce(
+                    (sum: number, question: any) => sum + (question.points || 1),
+                    0
+                );
+
+                // Convert all quiz questions to drafts by setting isDraft: true
+                const draftQuestions = quiz.questions.map((question: Question) => ({
+                    ...question,
+                    isDraft: true,
+                    // Generate a new ID for each draft to avoid collisions
+                    id: uuidv4()
+                }));
+
+                // Add converted questions to draftQuestions
+                state.draftQuestions = [
+                    ...state.draftQuestions,
+                    ...draftQuestions
+                ];
+
+                // Remove questions from the quiz and update points
+                state.quizzes[quizIndex] = {
+                    ...quiz,
+                    questions: [], // Remove all questions
+                    points: quiz.points - pointsToSubtract // Update points
+                };
+
+                console.log("Converted quiz questions to drafts:");
+                console.log(draftQuestions);
+            }
+        },
+        
         // Add a helper action to transfer draft questions to a real quiz
         transferDraftQuestionsToQuiz: (state, { payload: quizId }) => {
             // Find the quiz to update
             const quizIndex = state.quizzes.findIndex((q: any) => q._id === quizId);
-
             if (quizIndex !== -1) {
                 // Calculate additional points
                 const additionalPoints = state.draftQuestions.reduce(
@@ -133,18 +174,28 @@ const quizzesSlice = createSlice({
                     0
                 );
 
+                // Convert draft questions to non-draft by setting isDraft to false
+                const convertedQuestions = state.draftQuestions.map(question => ({
+                    ...question,
+                    isDraft: false
+                }));
+                
                 // Add all draft questions to the quiz
                 state.quizzes[quizIndex] = {
                     ...state.quizzes[quizIndex],
                     questions: [
                         ...state.quizzes[quizIndex].questions,
-                        ...state.draftQuestions
+                        ...convertedQuestions
                     ],
                     points: state.quizzes[quizIndex].points + additionalPoints
                 };
-
+                
                 // Clear the draft questions
                 state.draftQuestions = [];
+
+                console.log("LOGGING SPREE")
+                console.log(state.quizzes[quizIndex].questions)
+                console.log(state.quizzes[quizIndex].questions.length)
             }
         }
     },
@@ -156,15 +207,16 @@ export const {
     deleteQuiz,
     updateQuiz,
     publishQuiz,
+    // question actions
     addQuestionToQuiz,
     updateQuestionInQuiz,
     removeQuestionFromQuiz,
-    // actions to edit local questions before any "Save" button is clicked (at which point they get update to real quiz)
     addDraftQuestion,
     updateDraftQuestion,
     removeDraftQuestion,
     clearDraftQuestions,
-    transferDraftQuestionsToQuiz
+    transferDraftQuestionsToQuiz,
+    convertQuizToDrafts
 } = quizzesSlice.actions;
 
 export default quizzesSlice.reducer;

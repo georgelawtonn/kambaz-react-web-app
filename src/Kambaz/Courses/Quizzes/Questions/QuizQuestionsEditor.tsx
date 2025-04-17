@@ -7,17 +7,22 @@ import {
     clearDraftQuestions,
     removeQuestionFromQuiz,
     addQuiz,
-    transferDraftQuestionsToQuiz,
-    updateQuestionInQuiz,
     updateDraftQuestion,
-    addQuestionToQuiz
+    addQuestionToQuiz,
+    transferDraftQuestionsToQuiz, 
+    updateQuestionInQuiz, 
+    convertQuizToDrafts
 } from '../reducer';
+import {v4 as uuidv4} from "uuid";
+
+// import store from '../../../store.ts'
+
 import * as coursesClient from "../../client.ts";
 import {Question, MultipleChoiceQuestion, TrueFalseQuestion, BaseQuestion, FillInBlankQuestion} from './QuestionTypes';
 import MCQuestionComponent from "./MCQuestionComponent.tsx";
 import TFQuestionComponent from "./TFQuestionComponent.tsx";
 import QuestionTypeSelector from "./QuestionTypeSelector.tsx";
-import React from "react";
+import {useEffect} from "react";
 import FIBQuestionComponent from "./FIBQuestionComponent.tsx";
 
 // Main component that holds all questions, and manages communication with redux
@@ -26,6 +31,7 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
     const dispatch = useDispatch();
     const { cid, qid } = useParams();
 
+    /*
     // get draft questions from Redux
     const draftQuestions = useSelector((state: any) => state.quizzesReducer.draftQuestions);
 
@@ -34,31 +40,55 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
         qid !== 'new' ? state.quizzesReducer.quizzes.find((q: any) => q._id === qid) : null
     );
 
-    // determine which questions to display based on if quiz is new or not
+    // determine if it's a new quiz
     const isNewQuiz = qid === 'new';
-    const displayQuestions = isNewQuiz ? draftQuestions : (quiz?.questions || []);
 
+    // combine both sources of questions (drafts and existing quiz questions)
+    const displayQuestions: Question[] = [
+        ...(isNewQuiz ? [] : (quiz?.questions || [])),  // Include quiz questions if not a new quiz
+        ...draftQuestions                                // Always include draft questions
+    ];
+     */
+
+    // Determine if it's a new quiz
+    const isNewQuiz = qid === 'new';
+
+    // Get the actual quiz if editing an existing one
+    const quiz = useSelector((state: any) =>
+        qid !== 'new' ? state.quizzesReducer.quizzes.find((q: any) => q._id === qid) : null
+    );
+
+    // When component first loads, convert quiz questions to drafts if editing existing quiz
+    useEffect(() => {
+        if (!isNewQuiz && quiz && quiz._id) {
+            // Check if we have any quiz questions
+            if (quiz.questions && quiz.questions.length > 0) {
+                // Convert quiz questions to drafts
+                dispatch(convertQuizToDrafts(quiz._id));
+            }
+        }
+        
+    }, [isNewQuiz, quiz, dispatch]);
+    
+    const displayQuestions = useSelector((state: any) => state.quizzesReducer.draftQuestions);
+    
     // calculate total points
     const totalPoints = displayQuestions.reduce((sum: number, q: any) => sum + (q.points || 1), 0);
-
-    // helper function to update question
-    const pushQuestionUpdate = async (question: Question) => {
-        if (isNewQuiz) { // update depending on if new quiz
-            dispatch(updateDraftQuestion(question));
-        } else {
-            dispatch(updateQuestionInQuiz(question));
-        }
-    }
 
     // when the whole list of questions is saved
     const handleSave = async () => {
         if (!cid) return;
-
         if (isNewQuiz) {
             const newQuiz = await coursesClient.createQuizForCourse(cid!, quizData);
+            const newQuizId = newQuiz._id;
+            console.log("new qid (handleSave): " + newQuizId);
+
             dispatch(addQuiz(newQuiz));
-            dispatch(transferDraftQuestionsToQuiz(qid));
-            dispatch(clearDraftQuestions()); // remove drafts (they've been pushed)
+
+            setTimeout(() => {
+                dispatch(transferDraftQuestionsToQuiz(newQuiz._id));
+                dispatch(clearDraftQuestions()); // remove drafts (they've been pushed)
+            }, 150); // this is bad code, but the better solution is overcomplicated
         }
 
         navigate(`/Kambaz/Courses/${cid}/Quizzes`);
@@ -72,24 +102,27 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
         // if not, then either:
         //     navigate(`/Kambaz/Courses/${cid}/Quizzes`);
         // or pass activeTab from quizEditor down and change it to 'details'
+
+        // also, I could just not clear it yet, and have it still transfer all drafts to quiz when "save" in details is clicked
     }
 
     // when '+ new question' is clicked
     const handleAddQuestion = () => {
         const newQuestion: MultipleChoiceQuestion = {
-            id: Date.now().toString(),
-            title: `Question ${draftQuestions.length + 1 || 1}`,
+            id: uuidv4(),
+            title: `Question ${displayQuestions.length + 1 || 1}`,
             type: 'multiple_choice',
             points: 1,
             question: '',
             choices: [],
             correctAnswer: null,
-            isEditing: false
+            isEditing: false,
+            isDraft: true
         };
-
-        if (isNewQuiz) { // Add to draft questions
+        
+        if (newQuestion.isDraft) { // Add to draft questions
             dispatch(addDraftQuestion(newQuestion));
-        } else { // Add to redux quiz list of questions
+        } else { // Add to redux quiz list of questions (it probably should make a new draft and remove old, but tbd)
             dispatch(addQuestionToQuiz(newQuestion));
         }
     };
@@ -97,10 +130,15 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
     // when 'Delete' is clicked, for a specific question
     const handleDeleteQuestion = (questionId: string) => {
         const q = displayQuestions.find((q: Question) => q.id === questionId);
-        if (isNewQuiz) { // Remove from draft questions
-            dispatch(removeDraftQuestion(q));
-        } else { // Remove from redux quiz list of questions
-            dispatch(removeQuestionFromQuiz(q));
+        console.log("questionId: " + questionId);
+        if (q) {
+            if (q.isDraft) { // Remove from draft questions
+                console.log("is draft")
+                dispatch(removeDraftQuestion(q));
+            } else { // Remove from redux quiz list of questions
+                console.log("is not draft")
+                dispatch(removeQuestionFromQuiz(q));
+            }
         }
     };
 
@@ -114,9 +152,12 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
                 ...questionToEdit,
                 isEditing: !questionToEdit.isEditing
             };
-            console.log(questionId, updatedQuestion.isEditing);
 
-            pushQuestionUpdate(updatedQuestion);
+            if (updatedQuestion.isDraft) {
+                dispatch(updateDraftQuestion(updatedQuestion));
+            } else {
+                dispatch(updateQuestionInQuiz(updatedQuestion));
+            }
         }
     };
 
@@ -126,7 +167,7 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
             ...question,
             isEditing: false
         }
-        pushQuestionUpdate(updatedQuestionNotEditing);
+        dispatch(updateDraftQuestion(updatedQuestionNotEditing));
     };
 
     // when 'Save' for an individual question is clicked (in editing mode)
@@ -135,15 +176,17 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
             ...updatedQuestion,
             isEditing: false
         }
-        pushQuestionUpdate(updatedQuestionNotEditing);
+        if (updatedQuestionNotEditing.isDraft) {
+            dispatch(updateDraftQuestion(updatedQuestionNotEditing));
+        } else {
+            dispatch(updateQuestionInQuiz(updatedQuestionNotEditing));
+        }
     };
 
     // To swap between question components (when using dropdown selector)
     const handleQuestionTypeChange = (questionId: string, newType: 'multiple_choice' | 'true_false' | 'fill_in_blank') => {
         // Find current question
-        const question = isNewQuiz
-            ? draftQuestions.find((q: Question) => q.id === questionId) // if in drafts
-            : quiz.questions.find((q: Question) => q.id === questionId); // if in quiz
+        const question = displayQuestions.find((q: Question) => q.id === questionId)
 
         if (!question) return;
 
@@ -154,7 +197,8 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
             type: newType, // Update the type
             points: question.points,
             question: question.question,
-            isEditing: question.isEditing
+            isEditing: question.isEditing,
+            isDraft: question.isDraft
         };
 
         // Create a new question of the target type
@@ -180,14 +224,13 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
                 convertedQuestion = {
                     ...baseProps,
                     type: 'fill_in_blank',
-                    answers: [],
-                    caseSensitive: false
+                    answers: []
                 };
                 break;
         }
 
         // Replace the question in the appropriate state
-        pushQuestionUpdate(convertedQuestion);
+        dispatch(updateDraftQuestion(convertedQuestion));
     };
 
     // Figures out which question component to render
@@ -195,13 +238,12 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
         switch (question.type) {
             case 'multiple_choice':
                 return (
-                    <div className="question-container">
+                    <div className="question-container" key={question.id}>
                         <QuestionTypeSelector
                             currentType={question.type}
                             onTypeChange={(newType) => handleQuestionTypeChange(question.id, newType)}
                         />
                         <MCQuestionComponent
-                            key={question.id}
                             question={question as MultipleChoiceQuestion}
                             onDelete={handleDeleteQuestion}
                             onEdit={handleEditQuestion}
@@ -212,7 +254,7 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
                 );
             case 'true_false':
                 return (
-                    <div className="question-container">
+                    <div className="question-container" key={question.id}>
                         <QuestionTypeSelector
                             currentType={question.type}
                             onTypeChange={(newType) => handleQuestionTypeChange(question.id, newType)}
@@ -227,7 +269,7 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
                     </div>
                 )
             case 'fill_in_blank':
-                return (<div className="question-container">
+                return (<div className="question-container" key={question.id}>
                     <QuestionTypeSelector
                         currentType={question.type}
                         onTypeChange={(newType) => handleQuestionTypeChange(question.id, newType)}
@@ -245,6 +287,7 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
     };
 
     // Clear drafts when leaving page
+    /*
     React.useEffect(() => {
         return () => {
             if (isNewQuiz) {
@@ -252,6 +295,7 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
             }
         };
     }, [isNewQuiz, dispatch]);
+     */
 
     return (
         <div className="quiz-questions-container">

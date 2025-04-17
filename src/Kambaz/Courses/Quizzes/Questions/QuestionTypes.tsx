@@ -4,7 +4,8 @@ export interface BaseQuestion {
     type: string;
     points: number;
     question: string;
-    isEditing?: boolean;
+    isEditing: boolean;
+    isDraft: boolean;
 }
 
 export interface MultipleChoiceQuestion extends BaseQuestion {
@@ -21,7 +22,6 @@ export interface TrueFalseQuestion extends BaseQuestion {
 export interface FillInBlankQuestion extends BaseQuestion {
     type: 'fill_in_blank';
     answers: string[];
-    caseSensitive: boolean;
 }
 
 // Union type for all question types
