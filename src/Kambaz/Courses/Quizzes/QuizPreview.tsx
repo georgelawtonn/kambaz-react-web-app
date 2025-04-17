@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { Button, Form } from 'react-bootstrap';
+import {useState, useEffect} from 'react';
+import {useParams, useNavigate} from 'react-router-dom';
+import {useSelector} from 'react-redux';
+import {Button, Form} from 'react-bootstrap';
 import FacultyProtected from '../../Account/FacultyProtected';
-import { Question, MultipleChoiceQuestion, TrueFalseQuestion, FillInBlankQuestion } from './Questions/QuestionTypes';
+import {Question, MultipleChoiceQuestion, TrueFalseQuestion, FillInBlankQuestion} from './Questions/QuestionTypes';
 import './QuizPreview.css';
-import { findQuestionsForQuiz } from './client';
+import {findQuestionsForQuiz} from './client';
 
 export default function QuizPreview() {
     const navigate = useNavigate();
-    const { cid, qid } = useParams();
+    const {cid, qid} = useParams();
 
     // Get the quiz from Redux store
     const quiz = useSelector((state: any) =>
@@ -44,7 +44,7 @@ export default function QuizPreview() {
             loadQuizQuestions();
         }
     }, [qid]);
-    
+
     // Initialize answers
     useEffect(() => {
         if (quiz && quiz.questions) {
@@ -211,8 +211,8 @@ export default function QuizPreview() {
                     <h3>{question.title || `Question ${currentQuestionIndex + 1}`}</h3>
                     <span className="points">{question.points || 1} pts</span>
                 </div>
-                
-                <div className="question-text" dangerouslySetInnerHTML={{ __html: question.question }}></div>
+
+                <div className="question-text" dangerouslySetInnerHTML={{__html: question.question}}></div>
 
                 {question.type === 'multiple_choice' && (
                     <div className="choices-container">
@@ -234,7 +234,8 @@ export default function QuizPreview() {
 
                         {isSubmitted && (question as MultipleChoiceQuestion).correctAnswer !== null && (
                             <div className="correct-answer-display">
-                                Correct Answer: {(question as MultipleChoiceQuestion).choices[(question as MultipleChoiceQuestion).correctAnswer || 0]}
+                                Correct
+                                Answer: {(question as MultipleChoiceQuestion).choices[(question as MultipleChoiceQuestion).correctAnswer || 0]}
                             </div>
                         )}
                     </div>
@@ -298,101 +299,102 @@ export default function QuizPreview() {
 
     // Return the wrapped component
     return (
-        <FacultyProtected>
-            <div className="quiz-preview-container">
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h2>{quiz.title}</h2>
+        <div className="quiz-preview-container">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h2>{quiz.title}</h2>
 
-                    <div className="d-flex">
-                        <FacultyProtected>
-                            <Button
-                                variant="outline-primary"
-                                className="me-3"
-                                onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/edit`)}
-                            >
-                                Edit Quiz
-                            </Button>
-                        </FacultyProtected>
+                <div className="d-flex">
+                    <FacultyProtected>
+                        <Button
+                            variant="outline-primary"
+                            className="me-3"
+                            onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/edit`)}
+                        >
+                            Edit Quiz
+                        </Button>
+                    </FacultyProtected>
 
-                        {isSubmitted && (
-                            <div className="score-display">
-                                Score: {score}%
-                            </div>
-                        )}
-                    </div>
+                    {isSubmitted && (
+                        <div className="score-display">
+                            Score: {score}%
+                        </div>
+                    )}
                 </div>
-
+            </div>
+            <FacultyProtected>
                 <div className="preview-notice alert alert-warning">
                     ⓘ This is a preview of the published version of the quiz
                 </div>
+            </FacultyProtected>
+            <div className="started-info mb-4">
+                Started: {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
+            </div>
 
-                <div className="started-info mb-4">
-                    Started: {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
+            <h3 className="border-bottom pb-3 mb-4">Quiz Instructions</h3>
+
+            {/* Progress bar */}
+            <div className="progress mb-4">
+                <div
+                    className="progress-bar"
+                    role="progressbar"
+                    style={{width: `${((currentQuestionIndex + 1) / quiz.questions.length) * 100}%`}}
+                    aria-valuenow={(currentQuestionIndex + 1) / quiz.questions.length * 100}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                >
+                    Question {currentQuestionIndex + 1} of {quiz.questions.length}
                 </div>
+            </div>
 
-                <h3 className="border-bottom pb-3 mb-4">Quiz Instructions</h3>
+            {/* Render current question */}
+            {renderCurrentQuestion()}
 
-                {/* Progress bar */}
-                <div className="progress mb-4">
-                    <div
-                        className="progress-bar"
-                        role="progressbar"
-                        style={{ width: `${((currentQuestionIndex + 1) / quiz.questions.length) * 100}%` }}
-                        aria-valuenow={(currentQuestionIndex + 1) / quiz.questions.length * 100}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                    >
-                        Question {currentQuestionIndex + 1} of {quiz.questions.length}
-                    </div>
-                </div>
+            {/* Navigation buttons */}
+            <div className="quiz-navigation d-flex justify-content-between mt-4">
+                <Button
+                    variant="secondary"
+                    onClick={handlePrevQuestion}
+                    disabled={currentQuestionIndex === 0}
+                >
+                    Previous
+                </Button>
 
-                {/* Render current question */}
-                {renderCurrentQuestion()}
-
-                {/* Navigation buttons */}
-                <div className="quiz-navigation d-flex justify-content-between mt-4">
+                {currentQuestionIndex < quiz.questions.length - 1 ? (
                     <Button
-                        variant="secondary"
-                        onClick={handlePrevQuestion}
-                        disabled={currentQuestionIndex === 0}
+                        variant="primary"
+                        onClick={handleNextQuestion}
                     >
-                        Previous
+                        Next
                     </Button>
-
-                    {currentQuestionIndex < quiz.questions.length - 1 ? (
-                        <Button
-                            variant="primary"
-                            onClick={handleNextQuestion}
-                        >
-                            Next
-                        </Button>
-                    ) : (
-                        <Button
-                            variant="danger"
-                            onClick={handleSubmit}
-                            disabled={isSubmitted}
-                        >
-                            Submit Quiz
-                        </Button>
-                    )}
-                </div>
-
-                {/* Quiz completed info */}
-                {isSubmitted && (
-                    <div className="quiz-completed-info d-flex justify-content-between align-items-center mt-4 p-3 border-top">
-                        <div>
-                            Quiz saved at {new Date().toLocaleTimeString()}
-                        </div>
-
-                        <Button
-                            variant="outline-secondary"
-                            onClick={handleKeepEditing}
-                        >
-                            <span>✏️ Keep Editing This Quiz</span>
-                        </Button>
-                    </div>
+                ) : (
+                    <Button
+                        variant="danger"
+                        onClick={handleSubmit}
+                        disabled={isSubmitted}
+                    >
+                        Submit Quiz
+                    </Button>
                 )}
             </div>
-        </FacultyProtected>
+
+            {/* Quiz completed info */}
+            {isSubmitted && (
+                <div
+                    className="quiz-completed-info d-flex justify-content-between align-items-center mt-4 p-3 border-top">
+                    <div>
+                        Quiz saved at {new Date().toLocaleTimeString()}
+                    </div>
+
+                    <FacultyProtected>
+                    <Button
+                        variant="outline-secondary"
+                        onClick={handleKeepEditing}
+                    >
+                        <span>✏️ Keep Editing This Quiz</span>
+                    </Button>
+                    </FacultyProtected>
+                </div>
+            )}
+        </div>
     );
 }

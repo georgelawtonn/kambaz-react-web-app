@@ -14,7 +14,7 @@ export default function QuizPreviewPage() {
     );
 
     // Get current user from auth state
-    const { currentUser } = useSelector((state: any) => state.accountReducer);
+    // const { currentUser } = useSelector((state: any) => state.accountReducer);
 
     // If quiz doesn't exist, show an error
     if (!quiz) {
@@ -38,25 +38,25 @@ export default function QuizPreviewPage() {
     }
 
     // If user is not faculty, show an error
-    if (!currentUser || currentUser.role !== 'FACULTY') {
-        return (
-            <div className="container mt-4">
-                <Alert variant="warning">
-                    <Alert.Heading>Access Denied</Alert.Heading>
-                    <p>You need to be a faculty member to preview quizzes.</p>
-                    <hr />
-                    <div className="d-flex justify-content-end">
-                        <Button
-                            onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes`)}
-                            variant="outline-warning"
-                        >
-                            Back to Quizzes
-                        </Button>
-                    </div>
-                </Alert>
-            </div>
-        );
-    }
+    // if (!currentUser || currentUser.role !== 'FACULTY') {
+    //     return (
+    //         <div className="container mt-4">
+    //             <Alert variant="warning">
+    //                 <Alert.Heading>Access Denied</Alert.Heading>
+    //                 <p>You need to be a faculty member to preview quizzes.</p>
+    //                 <hr />
+    //                 <div className="d-flex justify-content-end">
+    //                     <Button
+    //                         onClick={() => navigate(`/Kambaz/Courses/${cid}/Quizzes`)}
+    //                         variant="outline-warning"
+    //                     >
+    //                         Back to Quizzes
+    //                     </Button>
+    //                 </div>
+    //             </Alert>
+    //         </div>
+    //     );
+    // }
 
     // Everything is good, render the quiz preview
     return <QuizPreview />;
