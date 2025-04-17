@@ -67,7 +67,7 @@ export default function QuizDetail() {
         <div className="m-4">
             <div className="mb-3 d-flex justify-content-center">
                 <Button variant="secondary" size="lg" className="me-1" onClick={() => {
-                    navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/edit`)
+                    navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/preview`)
                 //     THIS NEEDS CHANGES
                 }}>
                     Preview

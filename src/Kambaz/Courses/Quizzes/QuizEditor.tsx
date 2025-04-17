@@ -34,7 +34,7 @@ export default function QuizEditor() {
         title: quiz?.title || "New Quiz",
         course: quiz?.course || cid,
         description: quiz?.description || "Quiz description",
-        points: quiz?.points || 100,
+        points: quiz?.points || 0,
         quiz_type: quiz?.quiz_type || "GRADED_QUIZ",
         assignment_group: quiz?.assignment_group || "QUIZZES",
         shuffle_answers: quiz?.shuffle_answers || true,

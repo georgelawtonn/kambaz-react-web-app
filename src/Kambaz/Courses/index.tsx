@@ -14,6 +14,7 @@ import * as courseClient from "./client.ts";
 import Quizzes from "./Quizzes";
 import QuizEditor from "./Quizzes/QuizEditor.tsx";
 import QuizDetail from "./Quizzes/QuizDetail.tsx";
+import QuizPreviewPage from "./Quizzes/QuizPreviewPage.tsx";
 
 export default function Courses() {
     const {cid} = useParams();
@@ -59,6 +60,7 @@ export default function Courses() {
                         <Route path="Quizzes" element={<Quizzes/>}/>
                         <Route path="Quizzes/:qid/edit" element={<QuizEditor/>}/>
                         <Route path="Quizzes/:qid/view" element={<QuizDetail/>}/>
+                        <Route path="Quizzes/:qid/preview" element={<QuizPreviewPage />} />
                         <Route path="People" element={<PeopleTable users={users}/>}/>
                     </Routes>
                 </div>

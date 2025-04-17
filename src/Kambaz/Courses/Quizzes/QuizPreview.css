@@ -1,0 +1,158 @@
+/* Quiz Preview Container */
+.quiz-preview-container {
+    max-width: 950px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Preview Notice */
+.preview-notice {
+    background-color: #fff3cd;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    border-left: 4px solid #ffc107;
+}
+
+/* Score Display */
+.score-display {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #28a745;
+    padding: 8px 15px;
+    background-color: #e8f5e9;
+    border-radius: 20px;
+}
+
+/* Question Container */
+.question {
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+/* Question Header */
+.question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.question-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.points {
+    font-weight: bold;
+    color: #666;
+}
+
+/* Question Text */
+.question-text {
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+/* Choices Container */
+.choices-container, .true-false-container, .fill-blank-container {
+    margin-top: 15px;
+}
+
+/* Correct and Incorrect Answers */
+.correct {
+    border-left: 5px solid #28a745;
+}
+
+.incorrect {
+    border-left: 5px solid #dc3545;
+}
+
+.correct-answer {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.incorrect-answer {
+    color: #dc3545;
+    text-decoration: line-through;
+}
+
+.correct-answer-display {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #e8f5e9;
+    border-radius: 5px;
+    color: #2e7d32;
+    font-weight: 500;
+}
+
+/* Quiz Navigation */
+.quiz-navigation {
+    margin-top: 20px;
+}
+
+/* Quiz Submit Button */
+.quiz-submit {
+    margin: 30px 0;
+}
+
+/* Quiz Completed Info */
+.quiz-completed-info {
+    background-color: #f5f5f5;
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin-top: 30px;
+}
+
+/* Progress Bar */
+.progress {
+    height: 30px;
+    margin-bottom: 20px;
+}
+
+.progress-bar {
+    background-color: #007bff;
+}
+
+/* Form Controls */
+.form-check {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.form-check:hover {
+    background-color: #f0f0f0;
+}
+
+.form-check-input {
+    margin-right: 10px;
+}
+
+/* Fill in the blank input */
+.fill-blank-container .form-control {
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+}
+
+.fill-blank-container .form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* For Submitted Quiz */
+.fill-blank-container .correct-answer {
+    border-color: #28a745;
+    background-color: #e8f5e9;
+}

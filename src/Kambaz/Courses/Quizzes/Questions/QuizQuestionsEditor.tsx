@@ -11,12 +11,10 @@ import {
     addQuestionToQuiz,
     transferDraftQuestionsToQuiz,
     updateQuestionInQuiz,
-    convertQuizToDrafts, setDraftQuestions
+    convertQuizToDrafts,
+    setDraftQuestions
 } from '../reducer';
 import {v4 as uuidv4} from "uuid";
-
-
-import * as quizzesClient from "../../Quizzes/client.ts";
 import * as coursesClient from "../../client.ts";
 import {Question, MultipleChoiceQuestion, TrueFalseQuestion, BaseQuestion, FillInBlankQuestion} from './QuestionTypes';
 import MCQuestionComponent from "./MCQuestionComponent.tsx";
@@ -25,31 +23,13 @@ import QuestionTypeSelector from "./QuestionTypeSelector.tsx";
 import {useEffect} from "react";
 import FIBQuestionComponent from "./FIBQuestionComponent.tsx";
 import {syncQuestionsForQuiz} from "../client.ts";
+import * as quizzesClient from "../client.ts";
 
 // Main component that holds all questions, and manages communication with redux
 export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { cid, qid } = useParams();
-
-    /*
-    // get draft questions from Redux
-    const draftQuestions = useSelector((state: any) => state.quizzesReducer.draftQuestions);
-
-    // get the actual quiz if editing an existing one
-    const quiz = useSelector((state: any) =>
-        qid !== 'new' ? state.quizzesReducer.quizzes.find((q: any) => q._id === qid) : null
-    );
-
-    // determine if it's a new quiz
-    const isNewQuiz = qid === 'new';
-
-    // combine both sources of questions (drafts and existing quiz questions)
-    const displayQuestions: Question[] = [
-        ...(isNewQuiz ? [] : (quiz?.questions || [])),  // Include quiz questions if not a new quiz
-        ...draftQuestions                                // Always include draft questions
-    ];
-     */
 
     // Determine if it's a new quiz
     const isNewQuiz = qid === 'new';
@@ -143,15 +123,21 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
 
     // when the whole list of questions is cancelled
     const handleCancel = () => {
-        dispatch(clearDraftQuestions());
-        navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/view`);
-        // not sure if this is good ? Quizzes/new/view ?
-        // if not, then either:
-        //     navigate(`/Kambaz/Courses/${cid}/Quizzes`);
-        // or pass activeTab from quizEditor down and change it to 'details'
+        // Only show confirmation if there are draft questions
+        if (displayQuestions.length > 0) {
+            const confirmCancel = window.confirm("Are you sure you want to cancel? All unsaved questions will be lost.");
 
-        // also, I could just not clear it yet, and have it still transfer all drafts to quiz when "save" in details is clicked
-    }
+            if (confirmCancel) {
+                dispatch(clearDraftQuestions());
+                navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/view`);
+            }
+            // If they clicked "Cancel" on the confirmation, do nothing
+        } else {
+            // If there are no draft questions, just navigate away without confirmation
+            dispatch(clearDraftQuestions());
+            navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/view`);
+        }
+    };
 
     // when '+ new question' is clicked
     const handleAddQuestion = () => {
@@ -333,16 +319,6 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
         }
     };
 
-    // Clear drafts when leaving page
-
-    // React.useEffect(() => {
-    //     return () => {
-    //         if (isNewQuiz) {
-    //             dispatch(clearDraftQuestions());
-    //         }
-    //     };
-    // }, [isNewQuiz, dispatch]);
-
     const convertDBQuestionToRedux = (dbQuestion : any) => {
         const baseQuestion = {
             id: dbQuestion._id,
@@ -430,5 +406,3 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
         </div>
     );
 }
-
-// TODO: alert when leaving (save or cancel?)
