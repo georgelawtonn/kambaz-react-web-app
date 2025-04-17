@@ -9,14 +9,14 @@ import {
     addQuiz,
     updateDraftQuestion,
     addQuestionToQuiz,
-    transferDraftQuestionsToQuiz, 
-    updateQuestionInQuiz, 
-    convertQuizToDrafts
+    transferDraftQuestionsToQuiz,
+    updateQuestionInQuiz,
+    convertQuizToDrafts, setDraftQuestions
 } from '../reducer';
 import {v4 as uuidv4} from "uuid";
 
-// import store from '../../../store.ts'
 
+import * as quizzesClient from "../../Quizzes/client.ts";
 import * as coursesClient from "../../client.ts";
 import {Question, MultipleChoiceQuestion, TrueFalseQuestion, BaseQuestion, FillInBlankQuestion} from './QuestionTypes';
 import MCQuestionComponent from "./MCQuestionComponent.tsx";
@@ -24,6 +24,7 @@ import TFQuestionComponent from "./TFQuestionComponent.tsx";
 import QuestionTypeSelector from "./QuestionTypeSelector.tsx";
 import {useEffect} from "react";
 import FIBQuestionComponent from "./FIBQuestionComponent.tsx";
+import {syncQuestionsForQuiz} from "../client.ts";
 
 // Main component that holds all questions, and manages communication with redux
 export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
@@ -75,24 +76,70 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
     // calculate total points
     const totalPoints = displayQuestions.reduce((sum: number, q: any) => sum + (q.points || 1), 0);
 
+
+    const convertQuestionForDB = (question : any, quizId: any) => {
+        const baseFields = {
+            _id: question.id,
+            title: question.title,
+            type: question.type,
+            points: question.points,
+            question: question.question,
+            quiz: quizId
+        };
+
+        switch (question.type) {
+            case 'multiple_choice':
+                return {
+                    ...baseFields,
+                    choices: question.choices,
+                    multipleChoiceAnswer: question.correctAnswer
+                };
+            case 'true_false':
+                return {
+                    ...baseFields,
+                    trueFalseAnswer: question.correctAnswer
+                };
+            case 'fill_in_blank':
+                return {
+                    ...baseFields,
+                    answers: question.answers
+                };
+            default:
+                throw new Error(`Unknown question type: ${question.type}`);
+        }
+    };
+
+
     // when the whole list of questions is saved
     const handleSave = async () => {
         if (!cid) return;
         if (isNewQuiz) {
-            const newQuiz = await coursesClient.createQuizForCourse(cid!, quizData);
+            const newQuiz = await coursesClient.createQuizForCourse(cid, quizData);
             const newQuizId = newQuiz._id;
             console.log("new qid (handleSave): " + newQuizId);
 
             dispatch(addQuiz(newQuiz));
+
+            const dbQuestions = displayQuestions.map((q : any) => convertQuestionForDB(q, newQuizId));
+            await syncQuestionsForQuiz(newQuizId, dbQuestions);
 
             setTimeout(() => {
                 dispatch(transferDraftQuestionsToQuiz(newQuiz._id));
                 dispatch(clearDraftQuestions()); // remove drafts (they've been pushed)
             }, 150); // this is bad code, but the better solution is overcomplicated
         }
+        else {
+            const dbQuestions = displayQuestions.map((q : any) => convertQuestionForDB(q, qid));
+
+            await syncQuestionsForQuiz(qid, dbQuestions);
+
+            dispatch(transferDraftQuestionsToQuiz(qid));
+            dispatch(clearDraftQuestions());
+        }
 
         navigate(`/Kambaz/Courses/${cid}/Quizzes`);
     }
+
 
     // when the whole list of questions is cancelled
     const handleCancel = () => {
@@ -287,15 +334,58 @@ export default function QuizQuestionsEditor({quizData}: { quizData: any; }) {
     };
 
     // Clear drafts when leaving page
-    /*
-    React.useEffect(() => {
-        return () => {
-            if (isNewQuiz) {
-                dispatch(clearDraftQuestions());
-            }
+
+    // React.useEffect(() => {
+    //     return () => {
+    //         if (isNewQuiz) {
+    //             dispatch(clearDraftQuestions());
+    //         }
+    //     };
+    // }, [isNewQuiz, dispatch]);
+
+    const convertDBQuestionToRedux = (dbQuestion : any) => {
+        const baseQuestion = {
+            id: dbQuestion._id,
+            title: dbQuestion.title,
+            type: dbQuestion.type,
+            points: dbQuestion.points,
+            question: dbQuestion.question,
+            isEditing: false,
+            isDraft: true
         };
-    }, [isNewQuiz, dispatch]);
-     */
+
+        switch (dbQuestion.type) {
+            case 'multiple_choice':
+                return {
+                    ...baseQuestion,
+                    choices: dbQuestion.choices || [],
+                    correctAnswer: dbQuestion.multipleChoiceAnswer
+                };
+            case 'true_false':
+                return {
+                    ...baseQuestion,
+                    correctAnswer: dbQuestion.trueFalseAnswer
+                };
+            case 'fill_in_blank':
+                return {
+                    ...baseQuestion,
+                    answers: dbQuestion.answers || []
+                };
+            default:
+                console.warn(`Unknown question type: ${dbQuestion.type}`);
+                return baseQuestion;
+        }
+    };
+
+    const fetchQuestions = async () => {
+        const dbQuestions = await quizzesClient.findQuestionsForQuiz(qid as string);
+        const reduxQuestions = dbQuestions.map((q : any) => convertDBQuestionToRedux(q));
+        dispatch(setDraftQuestions(reduxQuestions));
+    };
+    useEffect(() => {
+        fetchQuestions();
+    }, [qid]);
+
 
     return (
         <div className="quiz-questions-container">

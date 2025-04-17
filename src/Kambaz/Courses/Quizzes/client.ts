@@ -65,3 +65,11 @@ export const deleteQuestion = async (questionId: string) => {
     );
     return data;
 };
+
+export const syncQuestionsForQuiz = async (quizId: any, questions: any[]) => {
+    const { data } = await axiosWithCredentials.post(
+        `${QUIZZES_API}/${quizId}/sync-questions`,
+        { questions }
+    );
+    return data;
+};

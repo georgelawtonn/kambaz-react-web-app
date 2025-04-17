@@ -11,6 +11,9 @@ const quizzesSlice = createSlice({
     name: "quizzes",
     initialState,
     reducers: {
+        setDraftQuestions: (state, action) => {
+            state.draftQuestions = action.payload;
+        },
         setQuizzes: (state, action) => {
             state.quizzes = action.payload;
         },
@@ -208,6 +211,7 @@ export const {
     updateQuiz,
     publishQuiz,
     // question actions
+    setDraftQuestions,
     addQuestionToQuiz,
     updateQuestionInQuiz,
     removeQuestionFromQuiz,
