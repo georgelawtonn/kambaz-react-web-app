@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import { MultipleChoiceQuestion } from './QuestionTypes';
+import Editor from "react-simple-wysiwyg";
 
 interface MCQuestionComponentProps {
     question: MultipleChoiceQuestion;
@@ -105,15 +106,11 @@ export default function MCQuestionComponent({
                         </Form.Group>
                     </div>
 
+                    {/* WYSIWYG editor */}
                     <Form.Group className="mb-3">
                         <Form.Label>Question Text</Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            rows={3}
-                            value={editedQuestion.question}
-                            placeholder="Enter your question and multiple answers, then select the one correct answer."
-                            onChange={(e) => updateField('question', e.target.value)}
-                        />
+                        <Editor value={editedQuestion.question}
+                                onChange={(e) => updateField('question', e.target.value)}></Editor>
                     </Form.Group>
 
                     <Form.Group className="mb-3">
@@ -198,7 +195,12 @@ export default function MCQuestionComponent({
                   {question.points} {question.points === 1 ? 'point' : 'points'}
                 </span>
             </div>
-            <p>{question.question || "No question text yet"}</p>
+            
+            {/* To display as HTML instead of plaintext with tags*/}
+            <div
+                className="question-text mb-3"
+                dangerouslySetInnerHTML={{__html: question.question || "No question text yet"}}
+            />
 
             <div className="choices-list">
                 {question.choices.length > 0 ? (

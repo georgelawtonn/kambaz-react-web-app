@@ -9,7 +9,7 @@ import QuizPredescription from "./QuizPredescription.tsx";
 import LessonControlButtons from "./LessonControlButtons.tsx";
 import {useDispatch, useSelector} from "react-redux";
 
-import {setQuizzes} from "../Quizzes/reducer.ts";
+import {setQuizzes} from "./reducer.ts";
 import * as coursesClient from "../client";
 
 import {useEffect} from "react";
