@@ -69,4 +69,16 @@ export const createUser = async (user: any) => {
     const response = await axiosWithCredentials.post(`${USERS_API}`, user);
     return response.data;
 };
-
+export const createOrUpdateAttempt = async (userId: string, quizId: string, attemptData: any) => {
+    const response = await axiosWithCredentials.post(
+        `${USERS_API}/${userId}/quizzes/${quizId}/attempts`,
+        attemptData
+    );
+    return response.data;
+};
+export const findAttemptForUserAndQuiz = async (userId: string, quizId: string) => {
+    const response = await axiosWithCredentials.get(
+        `${USERS_API}/${userId}/quizzes/${quizId}/attempts`
+    );
+    return response.data;
+};

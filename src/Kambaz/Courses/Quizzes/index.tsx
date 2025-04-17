@@ -11,11 +11,16 @@ import {useDispatch, useSelector} from "react-redux";
 
 import {setQuizzes} from "./reducer.ts";
 import * as coursesClient from "../client";
+import * as userClient from "../../Account/client.ts"
 
-import {useEffect} from "react";
+import {useEffect, useState} from "react";
+import FacultyProtected from "../../Account/FacultyProtected.tsx";
+import StudentProtected from "../../Account/StudentProtected.tsx";
 
 export default function Quizzes() {
     const {cid} = useParams();
+    const {currentUser} = useSelector((state: any) => state.accountReducer);
+    const isStudent = currentUser?.role === "STUDENT";
 
     const formatDueDate = (dateTime: string) => {
         if (!dateTime) return '';
@@ -30,7 +35,10 @@ export default function Quizzes() {
         return `${month} ${day} at ${time}`
     }
 
-    const getAvailability = (quiz : any) => {
+    const [attempts, setAttempts] = useState<Record<string, any>>({});
+
+
+    const getAvailability = (quiz: any) => {
         const now = new Date();
         const availableFrom = quiz.available_from ? new Date(quiz.available_from) : null;
         const availableUntil = quiz.available_until ? new Date(quiz.available_until) : null;
@@ -49,6 +57,21 @@ export default function Quizzes() {
     const dispatch = useDispatch();
     const quizzes = useSelector((state: any) => state.quizzesReducer.quizzes);
 
+    const displayQuizzes = isStudent
+        ? quizzes.filter((quiz: any) => quiz.published)
+        : quizzes;
+
+
+    const fetchAttempts = async() => {
+        const attemptsMap: Record<string, any> = {};
+        for (const quiz of displayQuizzes) {
+            const attempt = await userClient.findAttemptForUserAndQuiz(currentUser._id, quiz._id);
+            if (attempt) {
+                attemptsMap[quiz._id] = attempt;
+            }
+        }
+        setAttempts(attemptsMap);
+    }
     const fetchQuizzes = async () => {
         const quizzes = await coursesClient.findQuizzesForCourse(cid as string);
         dispatch(setQuizzes(quizzes));
@@ -56,6 +79,9 @@ export default function Quizzes() {
     useEffect(() => {
         fetchQuizzes();
     }, []);
+    useEffect(() => {
+        fetchAttempts()
+    }, [displayQuizzes])
 
     return (
         <div>
@@ -67,22 +93,46 @@ export default function Quizzes() {
                         <strong>Assignment Quizzes</strong>
                     </div>
                     <ListGroup className="wd-lessons rounded-0">
-                        {quizzes.map((quiz: any) => (
+                        {displayQuizzes.map((quiz: any) => (
                             <ListGroup.Item
                                 className="wd-lesson p-3 ps-1"
                                 key={quiz._id}>
                                 <div>
-                                    <QuizPredescription />
+                                    <QuizPredescription/>
                                     <div>
-                                        <Link
-                                            to={`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/view`}
-                                            className="wd-assignment-link"
-                                            style={{fontSize: '16px', fontWeight: '500'}}>
-                                            {quiz.title}
-                                        </Link>
+                                        <FacultyProtected>
+                                            <Link
+                                                to={`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/view`}
+                                                className="wd-assignment-link"
+                                                style={{fontSize: '16px', fontWeight: '500'}}>
+                                                {quiz.title}
+                                            </Link>
+                                        </FacultyProtected>
+                                        <StudentProtected>
+                                            {(() => {
+                                                const availability = getAvailability(quiz);
+                                                return (availability && (availability === "Closed" || availability.includes("Not available until"))) ? (
+                                                    <span className="wd-assignment-link" style={{fontSize: '16px', fontWeight: '500', color: 'gray'}}>
+                                                        {quiz.title}
+                                                    </span>
+                                                ) : (
+                                                    <Link to={`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/preview`} className="wd-assignment-link" style={{fontSize: '16px', fontWeight: '500'}}>
+                                                        {quiz.title}
+                                                    </Link>
+                                                );
+                                            })()}
+                                        </StudentProtected>
                                         <div>
                                             <span>{getAvailability(quiz)} | </span>
-                                            <strong>Due</strong> {formatDueDate(quiz.due)} | {quiz.points} pts | {quiz.questions?.length || 0} Questions ****NEEDS SCORE*****
+                                            <strong>Due</strong> {formatDueDate(quiz.due)} | {quiz.points} pts
+                                            | {quiz.questions?.length || 0} Questions
+                                            <StudentProtected>
+                                                <span>
+                                                    {attempts[quiz._id]
+                                                    ? ` | Score: ${attempts[quiz._id].score}/${quiz.points}`
+                                                    : " | Not Attempted"}
+                                                </span>
+                                            </StudentProtected>
                                         </div>
                                     </div>
                                     <LessonControlButtons quiz={quiz}/>
