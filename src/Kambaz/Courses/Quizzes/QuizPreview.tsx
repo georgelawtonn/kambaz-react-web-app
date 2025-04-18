@@ -6,7 +6,7 @@ import FacultyProtected from '../../Account/FacultyProtected';
 import {Question, MultipleChoiceQuestion, TrueFalseQuestion, FillInBlankQuestion} from './Questions/QuestionTypes';
 import './QuizPreview.css';
 import {findQuestionsForQuiz} from './client';
-// import * as userClient from "../../Account/client.ts";
+import * as userClient from "../../Account/client.ts";
 
 export default function QuizPreview() {
     const navigate = useNavigate();
@@ -158,10 +158,12 @@ export default function QuizPreview() {
     };
 
     // Submit the quiz for grading
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
+        if (!qid) return;
         // Calculate score
         let totalPoints = 0;
         let earnedPoints = 0;
+        const gradedAnswers: any[] = [];
 
         questions.forEach((question: Question) => {
             const questionPoints = question.points || 1;
@@ -169,7 +171,6 @@ export default function QuizPreview() {
 
             const userAnswer = studentAnswers[question.id];
             let isCorrect = false;
-
             switch (question.type) {
                 case 'multiple_choice':
                     const mcQuestion = question as MultipleChoiceQuestion;
@@ -198,14 +199,39 @@ export default function QuizPreview() {
                     break;
             }
 
-            if (isCorrect) {
-                earnedPoints += questionPoints;
+            const pointsEarned = isCorrect ? questionPoints : 0;
+            earnedPoints += pointsEarned;
+
+            const answerObject = {
+                question: question.id,
+                isCorrect: isCorrect,
+                pointsEarned: pointsEarned,
+                textAnswers: null,
+                selectedChoiceIndex: null,
+                trueFalseAnswer: null
+            };
+            console.log(answerObject);
+            if (question.type === 'multiple_choice') {
+                answerObject.selectedChoiceIndex = userAnswer;
+            } else if (question.type === 'true_false') {
+                answerObject.trueFalseAnswer = userAnswer;
+            } else if (question.type === 'fill_in_blank') {
+                answerObject.textAnswers = userAnswer;
             }
+            gradedAnswers.push(answerObject);
         });
 
         const finalScore = Math.round((earnedPoints / totalPoints) * 100);
         setScore(finalScore);
         setIsSubmitted(true);
+
+
+        const attemptData = {
+            answers: gradedAnswers,
+            score: earnedPoints // Store the raw points, not the percentage
+        };
+
+        await userClient.createOrUpdateAttempt("current", qid, attemptData);
     };
 
     // Return to editing
