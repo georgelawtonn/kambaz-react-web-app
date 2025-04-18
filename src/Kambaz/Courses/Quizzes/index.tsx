@@ -115,6 +115,7 @@ export default function Quizzes() {
                                                 return (availability && (availability === "Closed" || availability.includes("Not available until") || hasReachedMaxAttempts)) ? (
                                                     <span className="wd-assignment-link" style={{fontSize: '16px', fontWeight: '500', color: 'gray'}}>
                                                         {quiz.title}
+                                                    {/*   TODO LINK TO THE PREVIOUS ONE IF OUT OF TRIES????? <- Only this condition though */}
                                                     </span>
                                                 ) : (
                                                     <Link to={`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/preview`} className="wd-assignment-link" style={{fontSize: '16px', fontWeight: '500'}}>
