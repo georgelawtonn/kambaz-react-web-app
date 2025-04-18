@@ -111,7 +111,7 @@ export default function Quizzes() {
                                         <StudentProtected>
                                             {(() => {
                                                 const availability = getAvailability(quiz);
-                                                const hasReachedMaxAttempts = attempts[quiz._id] && attempts[quiz._id].attempt_number >= (quiz.attempts_allowed || 1);
+                                                const hasReachedMaxAttempts = attempts[quiz._id] && attempts[quiz._id].attemptNumber >= (quiz.attempts_allowed || 1);
                                                 return (availability && (availability === "Closed" || availability.includes("Not available until") || hasReachedMaxAttempts)) ? (
                                                     <span className="wd-assignment-link" style={{fontSize: '16px', fontWeight: '500', color: 'gray'}}>
                                                         {quiz.title}
