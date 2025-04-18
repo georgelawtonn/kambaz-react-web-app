@@ -11,8 +11,10 @@ import * as userClient from "../../Account/client.ts";
 export default function QuizPreview() {
     const navigate = useNavigate();
     const {cid, qid} = useParams();
+    const {currentUser} = useSelector((state: any) => state.accountReducer);
+    const isStudent = currentUser?.role === "STUDENT";
 
-    // Get the quiz from Redux store
+    // get quiz from Redux store
     const quiz = useSelector((state: any) =>
         state.quizzesReducer.quizzes.find((q: any) => q._id === qid)
     );
@@ -21,6 +23,7 @@ export default function QuizPreview() {
     const [studentAnswers, setStudentAnswers] = useState<Record<string, any>>({});
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [score, setScore] = useState(0);
+    const [isRedirecting, setIsRedirecting] = useState(false);
 
     const [questions, setQuestions] = useState<Question[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -87,12 +90,24 @@ export default function QuizPreview() {
         }
     }, [quiz]);
 
-    // If quiz isn't loaded yet
+    // redirect student back to course page after submission
+    useEffect(() => {
+        if (isSubmitted && isStudent && isRedirecting) {
+            // add small delay to allow the submission to complete
+            const redirectTimer = setTimeout(() => {
+                navigate(`/Kambaz/Courses/${cid}/Quizzes`);
+            }, 3000);
+
+            return () => clearTimeout(redirectTimer);
+        }
+    }, [isSubmitted, isStudent, isRedirecting, navigate, cid]);
+
+    // if quiz isn't loaded yet
     if (!quiz || isLoading) {
         return <div>Loading quiz...</div>;
     }
 
-    // If no questions in the quiz
+    // if no questions in the quiz
     if (!quiz.questions || quiz.questions.length === 0) {
         return (
             <div className="quiz-preview-container">
@@ -113,9 +128,9 @@ export default function QuizPreview() {
 
     const currentQuestion = questions[currentQuestionIndex];
 
-    // Handle selecting an answer for multiple choice
+    // handle selecting an answer for multiple choice
     const handleMultipleChoiceAnswer = (questionId: string, choiceIndex: number) => {
-        if (isSubmitted) return; // Don't allow changes after submission
+        if (isSubmitted) return; // don't allow changes after submission
 
         setStudentAnswers(prev => ({
             ...prev,
@@ -123,9 +138,9 @@ export default function QuizPreview() {
         }));
     };
 
-    // Handle selecting an answer for true/false
+    // handle selecting an answer for true/false
     const handleTrueFalseAnswer = (questionId: string, isTrue: boolean) => {
-        if (isSubmitted) return; // Don't allow changes after submission
+        if (isSubmitted) return; // don't allow changes after submission
 
         setStudentAnswers(prev => ({
             ...prev,
@@ -133,9 +148,9 @@ export default function QuizPreview() {
         }));
     };
 
-    // Handle text input for fill-in-blank
+    // handle text input for fill-in-blank
     const handleFillInBlankAnswer = (questionId: string, value: string) => {
-        if (isSubmitted) return; // Don't allow changes after submission
+        if (isSubmitted) return; // don't allow changes after submission
 
         setStudentAnswers(prev => ({
             ...prev,
@@ -210,7 +225,7 @@ export default function QuizPreview() {
                 selectedChoiceIndex: null,
                 trueFalseAnswer: null
             };
-            console.log(answerObject);
+
             if (question.type === 'multiple_choice') {
                 answerObject.selectedChoiceIndex = userAnswer;
             } else if (question.type === 'true_false') {
@@ -225,13 +240,17 @@ export default function QuizPreview() {
         setScore(finalScore);
         setIsSubmitted(true);
 
-
         const attemptData = {
             answers: gradedAnswers,
             score: earnedPoints // Store the raw points, not the percentage
         };
 
         await userClient.createOrUpdateAttempt("current", qid, attemptData);
+
+        // if student, prepare for redirect
+        if (isStudent) {
+            setIsRedirecting(true);
+        }
     };
 
     // Return to editing
@@ -239,7 +258,12 @@ export default function QuizPreview() {
         navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/edit`);
     };
 
-    // Render the current question
+    // handle student return to quizzes
+    const handleReturnToCourse = () => {
+        navigate(`/Kambaz/Courses/${cid}/Quizzes`);
+    };
+
+    // render the current question
     const renderCurrentQuestion = () => {
         const question = currentQuestion;
         const answer = studentAnswers[question.id];
@@ -262,7 +286,7 @@ export default function QuizPreview() {
         })();
 
         return (
-            <div className={`question ${isSubmitted ? (isQuestionCorrect ? 'correct' : 'incorrect') : ''}`}>
+            <div className={`question ${isSubmitted && !isStudent ? (isQuestionCorrect ? 'correct' : 'incorrect') : ''}`}>
                 <div className="question-header">
                     <h3>{question.title || `Question ${currentQuestionIndex + 1}`}</h3>
                     <span className="points">{question.points || 1} pts</span>
@@ -281,14 +305,14 @@ export default function QuizPreview() {
                                 checked={answer === choiceIndex}
                                 onChange={() => handleMultipleChoiceAnswer(question.id, choiceIndex)}
                                 disabled={isSubmitted}
-                                className={isSubmitted ? (
+                                className={isSubmitted && !isStudent ? (
                                     choiceIndex === (question as MultipleChoiceQuestion).correctAnswer ? 'correct-answer' :
                                         (answer === choiceIndex ? 'incorrect-answer' : '')
                                 ) : ''}
                             />
                         ))}
 
-                        {isSubmitted && (question as MultipleChoiceQuestion).correctAnswer !== null && (
+                        {isSubmitted && !isStudent && (question as MultipleChoiceQuestion).correctAnswer !== null && (
                             <div className="correct-answer-display">
                                 Correct
                                 Answer: {(question as MultipleChoiceQuestion).choices[(question as MultipleChoiceQuestion).correctAnswer || 0]}
@@ -306,7 +330,7 @@ export default function QuizPreview() {
                             checked={answer === true}
                             onChange={() => handleTrueFalseAnswer(question.id, true)}
                             disabled={isSubmitted}
-                            className={isSubmitted ? (
+                            className={isSubmitted && !isStudent ? (
                                 (question as TrueFalseQuestion).correctAnswer === true ? 'correct-answer' :
                                     (answer === true ? 'incorrect-answer' : '')
                             ) : ''}
@@ -318,13 +342,13 @@ export default function QuizPreview() {
                             checked={answer === false}
                             onChange={() => handleTrueFalseAnswer(question.id, false)}
                             disabled={isSubmitted}
-                            className={isSubmitted ? (
+                            className={isSubmitted && !isStudent ? (
                                 (question as TrueFalseQuestion).correctAnswer === false ? 'correct-answer' :
                                     (answer === false ? 'incorrect-answer' : '')
                             ) : ''}
                         />
 
-                        {isSubmitted && (question as TrueFalseQuestion).correctAnswer !== null && (
+                        {isSubmitted && !isStudent && (question as TrueFalseQuestion).correctAnswer !== null && (
                             <div className="correct-answer-display">
                                 Correct Answer: {(question as TrueFalseQuestion).correctAnswer ? 'True' : 'False'}
                             </div>
@@ -339,10 +363,10 @@ export default function QuizPreview() {
                             value={answer || ''}
                             onChange={(e) => handleFillInBlankAnswer(question.id, e.target.value)}
                             disabled={isSubmitted}
-                            className={isSubmitted ? (isQuestionCorrect ? 'correct-answer' : 'incorrect-answer') : ''}
+                            className={isSubmitted && !isStudent ? (isQuestionCorrect ? 'correct-answer' : 'incorrect-answer') : ''}
                         />
 
-                        {isSubmitted && (
+                        {isSubmitted && !isStudent && (
                             <div className="correct-answer-display">
                                 Accepted Answers: {(question as FillInBlankQuestion).answers.join(', ')}
                             </div>
@@ -382,59 +406,87 @@ export default function QuizPreview() {
                     ⓘ This is a preview of the published version of the quiz
                 </div>
             </FacultyProtected>
-            <div className="started-info mb-4">
-                Started: {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
-            </div>
 
-            <h3 className="border-bottom pb-3 mb-4">Quiz Instructions</h3>
-
-            {/* Progress bar */}
-            <div className="progress mb-4">
-                <div
-                    className="progress-bar"
-                    role="progressbar"
-                    style={{width: `${((currentQuestionIndex + 1) / quiz.questions.length) * 100}%`}}
-                    aria-valuenow={(currentQuestionIndex + 1) / quiz.questions.length * 100}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                >
-                    Question {currentQuestionIndex + 1} of {quiz.questions.length}
+            {/* Show redirection message for students after submission */}
+            {isSubmitted && isStudent && (
+                <div className="alert alert-success">
+                    Your quiz has been submitted!
+                    <div className="mt-2">Redirecting you back to the course page...</div>
                 </div>
-            </div>
+            )}
 
-            {/* Render current question */}
-            {renderCurrentQuestion()}
+            {!isSubmitted && (
+                <div className="started-info mb-4">
+                    Started: {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
+                </div>
+            )}
 
-            {/* Navigation buttons */}
-            <div className="quiz-navigation d-flex justify-content-between mt-4">
-                <Button
-                    variant="secondary"
-                    onClick={handlePrevQuestion}
-                    disabled={currentQuestionIndex === 0}
-                >
-                    Previous
-                </Button>
+            {!isSubmitted && <h3 className="border-bottom pb-3 mb-4">Quiz Instructions</h3>}
 
-                {currentQuestionIndex < quiz.questions.length - 1 ? (
+            {/* Only show the quiz content if not submitted+student */}
+            {(!isSubmitted || !isStudent) && (
+                <>
+                    {/* Progress bar */}
+                    <div className="progress mb-4">
+                        <div
+                            className="progress-bar"
+                            role="progressbar"
+                            style={{width: `${((currentQuestionIndex + 1) / quiz.questions.length) * 100}%`}}
+                            aria-valuenow={(currentQuestionIndex + 1) / quiz.questions.length * 100}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                        >
+                            Question {currentQuestionIndex + 1} of {quiz.questions.length}
+                        </div>
+                    </div>
+
+                    {/* Render current question */}
+                    {renderCurrentQuestion()}
+
+                    {/* Navigation buttons */}
+                    <div className="quiz-navigation d-flex justify-content-between mt-4">
+                        <Button
+                            variant="secondary"
+                            onClick={handlePrevQuestion}
+                            disabled={currentQuestionIndex === 0}
+                        >
+                            Previous
+                        </Button>
+
+                        {currentQuestionIndex < quiz.questions.length - 1 ? (
+                            <Button
+                                variant="primary"
+                                onClick={handleNextQuestion}
+                            >
+                                Next
+                            </Button>
+                        ) : (
+                            <Button
+                                variant="danger"
+                                onClick={handleSubmit}
+                                disabled={isSubmitted}
+                            >
+                                Submit Quiz
+                            </Button>
+                        )}
+                    </div>
+                </>
+            )}
+
+            {/* For students who submitted, show return button */}
+            {isSubmitted && isStudent && (
+                <div className="d-flex justify-content-center mt-4">
                     <Button
                         variant="primary"
-                        onClick={handleNextQuestion}
+                        onClick={handleReturnToCourse}
                     >
-                        Next
+                        Return to Course
                     </Button>
-                ) : (
-                    <Button
-                        variant="danger"
-                        onClick={handleSubmit}
-                        disabled={isSubmitted}
-                    >
-                        Submit Quiz
-                    </Button>
-                )}
-            </div>
+                </div>
+            )}
 
-            {/* Quiz completed info */}
-            {isSubmitted && (
+            {/* Quiz completed info - only shown for faculty */}
+            {isSubmitted && !isStudent && (
                 <div
                     className="quiz-completed-info d-flex justify-content-between align-items-center mt-4 p-3 border-top">
                     <div>

@@ -76,12 +76,24 @@ export default function Quizzes() {
         const quizzes = await coursesClient.findQuizzesForCourse(cid as string);
         dispatch(setQuizzes(quizzes));
     };
+
     useEffect(() => {
         fetchQuizzes();
-    }, []);
+
+        // check for new quizzes every 15 seconds
+        const intervalId = setInterval(() => {
+            fetchQuizzes();
+        }, 15000);
+        // clean up interval when component unmounts
+        return () => clearInterval(intervalId);
+    }, [cid]);
+
+    // fetch attempts only when quizzes are loaded and currentUser is available
     useEffect(() => {
-        fetchAttempts()
-    }, [displayQuizzes])
+        if (quizzes.length > 0 && currentUser && currentUser._id) {
+            fetchAttempts();
+        }
+    }, [quizzes, currentUser?._id]);
 
     return (
         <div>
@@ -112,16 +124,24 @@ export default function Quizzes() {
                                             {(() => {
                                                 const availability = getAvailability(quiz);
                                                 const hasReachedMaxAttempts = attempts[quiz._id] && attempts[quiz._id].attemptNumber >= (quiz.attempts_allowed || 1);
-                                                return (availability && (availability === "Closed" || availability.includes("Not available until") || hasReachedMaxAttempts)) ? (
-                                                    <span className="wd-assignment-link" style={{fontSize: '16px', fontWeight: '500', color: 'gray'}}>
+                                                if (hasReachedMaxAttempts) {
+                                                    return (
+                                                        <Link to={`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/results`} className="wd-assignment-link" style={{fontSize: '16px', fontWeight: '500'}}>
+                                                            {quiz.title}
+                                                        </Link>);
+                                                }
+                                                else {
+                                                    return (availability && (availability === "Closed" || availability.includes("Not available until") || hasReachedMaxAttempts)) ? (
+                                                        <span className="wd-assignment-link" style={{fontSize: '16px', fontWeight: '500', color: 'gray'}}>
                                                         {quiz.title}
-                                                    {/*   TODO LINK TO THE PREVIOUS ONE IF OUT OF TRIES????? <- Only this condition though */}
+                                                            {/*   TODO LINK TO THE PREVIOUS ONE IF OUT OF TRIES????? <- Only this condition though */}
                                                     </span>
-                                                ) : (
-                                                    <Link to={`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/preview`} className="wd-assignment-link" style={{fontSize: '16px', fontWeight: '500'}}>
-                                                        {quiz.title}
-                                                    </Link>
-                                                );
+                                                    ) : (
+                                                        <Link to={`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/preview`} className="wd-assignment-link" style={{fontSize: '16px', fontWeight: '500'}}>
+                                                            {quiz.title}
+                                                        </Link>
+                                                    );
+                                                }
                                             })()}
                                         </StudentProtected>
                                         <div>
@@ -131,8 +151,8 @@ export default function Quizzes() {
                                             <StudentProtected>
                                                 <span>
                                                     {attempts[quiz._id]
-                                                    ? ` | Score: ${attempts[quiz._id].score}/${quiz.points}`
-                                                    : " | Not Attempted"}
+                                                        ? ` | Score: ${attempts[quiz._id].score}/${quiz.points}`
+                                                        : " | Not Attempted"}
                                                 </span>
                                             </StudentProtected>
                                         </div>
