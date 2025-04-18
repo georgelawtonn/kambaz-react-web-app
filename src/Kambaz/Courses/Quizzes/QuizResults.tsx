@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Button } from 'react-bootstrap';
 import { Question, MultipleChoiceQuestion, TrueFalseQuestion, FillInBlankQuestion } from './Questions/QuestionTypes';
-import './QuizPreview.css';
+import './QuizPreview.css'; // Reuse the same CSS
 import { findQuestionsForQuiz } from './client';
 import * as userClient from "../../Account/client.ts";
 
@@ -12,6 +12,7 @@ export default function QuizResults() {
     const { cid, qid } = useParams();
     const { currentUser } = useSelector((state: any) => state.accountReducer);
 
+    // Get the quiz from Redux store
     const quiz = useSelector((state: any) =>
         state.quizzesReducer.quizzes.find((q: any) => q._id === qid)
     );
@@ -23,6 +24,7 @@ export default function QuizResults() {
     const [questions, setQuestions] = useState<Question[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [submissionDate, setSubmissionDate] = useState<Date | null>(null);
+    const [hasAttemptsRemaining, setHasAttemptsRemaining] = useState(false);
 
     const convertDBQuestionToRedux = (dbQuestion: any) => {
         const baseQuestion = {
@@ -95,6 +97,10 @@ export default function QuizResults() {
                     }
                 });
                 setStudentAnswers(answers);
+
+                // Check if student has attempts remaining
+                const attemptsAllowed = quiz?.attempts_allowed || 1;
+                setHasAttemptsRemaining(attemptData.attemptNumber < attemptsAllowed);
             }
         } catch (error) {
             console.error("Error loading quiz data:", error);
@@ -161,6 +167,11 @@ export default function QuizResults() {
         navigate(`/Kambaz/Courses/${cid}/Quizzes`);
     };
 
+    // Try again
+    const handleTryAgain = () => {
+        navigate(`/Kambaz/Courses/${cid}/Quizzes/${qid}/preview`);
+    };
+
     // Render the current question with student's answers
     const renderCurrentQuestion = () => {
         const question = currentQuestion;
@@ -171,7 +182,7 @@ export default function QuizResults() {
         const isQuestionCorrect = attemptAnswer?.isCorrect || false;
 
         return (
-            <div className={`question ${isQuestionCorrect ? 'correct' : 'incorrect'}`}>
+            <div className={`question ${!hasAttemptsRemaining ? (isQuestionCorrect ? 'correct' : 'incorrect') : ''}`}>
                 <div className="question-header">
                     <h3>{question.title || `Question ${currentQuestionIndex + 1}`}</h3>
                     <span className="points">{question.points || 1} pts</span>
@@ -185,11 +196,13 @@ export default function QuizResults() {
                             <div
                                 key={choiceIndex}
                                 className={`form-check ${
-                                    choiceIndex === (question as MultipleChoiceQuestion).correctAnswer
+                                    !hasAttemptsRemaining && choiceIndex === (question as MultipleChoiceQuestion).correctAnswer
                                         ? 'correct-answer'
-                                        : answer === choiceIndex && !isQuestionCorrect
+                                        : !hasAttemptsRemaining && answer === choiceIndex && !isQuestionCorrect
                                             ? 'incorrect-answer'
-                                            : ''
+                                            : answer === choiceIndex
+                                                ? 'selected-answer'
+                                                : ''
                                 }`}
                             >
                                 <input
@@ -205,9 +218,11 @@ export default function QuizResults() {
                             </div>
                         ))}
 
-                        <div className="correct-answer-display">
-                            Correct Answer: {(question as MultipleChoiceQuestion).choices[(question as MultipleChoiceQuestion).correctAnswer || 0]}
-                        </div>
+                        {!hasAttemptsRemaining && (question as MultipleChoiceQuestion).correctAnswer !== null && (
+                            <div className="correct-answer-display">
+                                Correct Answer: {(question as MultipleChoiceQuestion).choices[(question as MultipleChoiceQuestion).correctAnswer || 0]}
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -215,11 +230,13 @@ export default function QuizResults() {
                     <div className="true-false-container">
                         <div
                             className={`form-check ${
-                                (question as TrueFalseQuestion).correctAnswer === true
+                                !hasAttemptsRemaining && (question as TrueFalseQuestion).correctAnswer === true
                                     ? 'correct-answer'
-                                    : answer === true && !isQuestionCorrect
+                                    : !hasAttemptsRemaining && answer === true && !isQuestionCorrect
                                         ? 'incorrect-answer'
-                                        : ''
+                                        : answer === true
+                                            ? 'selected-answer'
+                                            : ''
                             }`}
                         >
                             <input
@@ -235,11 +252,13 @@ export default function QuizResults() {
                         </div>
                         <div
                             className={`form-check ${
-                                (question as TrueFalseQuestion).correctAnswer === false
+                                !hasAttemptsRemaining && (question as TrueFalseQuestion).correctAnswer === false
                                     ? 'correct-answer'
-                                    : answer === false && !isQuestionCorrect
+                                    : !hasAttemptsRemaining && answer === false && !isQuestionCorrect
                                         ? 'incorrect-answer'
-                                        : ''
+                                        : answer === false
+                                            ? 'selected-answer'
+                                            : ''
                             }`}
                         >
                             <input
@@ -254,9 +273,11 @@ export default function QuizResults() {
                             </label>
                         </div>
 
-                        <div className="correct-answer-display">
-                            Correct Answer: {(question as TrueFalseQuestion).correctAnswer ? 'True' : 'False'}
-                        </div>
+                        {!hasAttemptsRemaining && (question as TrueFalseQuestion).correctAnswer !== null && (
+                            <div className="correct-answer-display">
+                                Correct Answer: {(question as TrueFalseQuestion).correctAnswer ? 'True' : 'False'}
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -264,25 +285,35 @@ export default function QuizResults() {
                     <div className="fill-blank-container">
                         <input
                             type="text"
-                            className={`form-control ${isQuestionCorrect ? 'correct-answer' : 'incorrect-answer'}`}
+                            className={`form-control ${
+                                !hasAttemptsRemaining ? (isQuestionCorrect ? 'correct-answer' : 'incorrect-answer') : 'selected-answer'
+                            }`}
                             value={answer || ''}
                             disabled={true}
                         />
 
-                        <div className="correct-answer-display">
-                            Accepted Answers: {(question as FillInBlankQuestion).answers.join(', ')}
-                        </div>
+                        {!hasAttemptsRemaining && (
+                            <div className="correct-answer-display">
+                                Accepted Answers: {(question as FillInBlankQuestion).answers.join(', ')}
+                            </div>
+                        )}
                     </div>
                 )}
 
                 <div className="answer-status mt-2">
-                    {isQuestionCorrect ? (
-                        <div className="text-success">
-                            <strong>✓ Correct</strong> - {attemptAnswer.pointsEarned} points earned
-                        </div>
+                    {!hasAttemptsRemaining ? (
+                        isQuestionCorrect ? (
+                            <div className="text-success">
+                                <strong>✓ Correct</strong> - {attemptAnswer.pointsEarned} points earned
+                            </div>
+                        ) : (
+                            <div className="text-danger">
+                                <strong>✗ Incorrect</strong> - 0 points earned
+                            </div>
+                        )
                     ) : (
-                        <div className="text-danger">
-                            <strong>✗ Incorrect</strong> - 0 points earned
+                        <div className="text-muted">
+                            <strong>Your answer</strong> is shown above
                         </div>
                     )}
                 </div>
@@ -301,8 +332,17 @@ export default function QuizResults() {
                 </div>
             </div>
 
-            <div className="alert alert-info">
-                This is your submitted quiz attempt. You can review your answers and see the correct solutions.
+            <div className={`alert ${hasAttemptsRemaining ? 'alert-info' : 'alert-warning'}`}>
+                {hasAttemptsRemaining ? (
+                    <>
+                        This is your previous quiz attempt. You still have attempts remaining.
+                        {/* Only showing your answers, not the correct solutions. */}
+                    </>
+                ) : (
+                    <>
+                        This is your final quiz attempt. You can review your answers and see the correct solutions.
+                    </>
+                )}
             </div>
 
             <div className="completed-info mb-4">
@@ -359,12 +399,23 @@ export default function QuizResults() {
                     Quiz score: {score}% ({attempt.score} out of {quiz.points} points)
                 </div>
 
-                <Button
-                    variant="outline-primary"
-                    onClick={handleReturnToCourse}
-                >
-                    Back to Quizzes
-                </Button>
+                <div>
+                    {hasAttemptsRemaining && (
+                        <Button
+                            variant="success"
+                            onClick={handleTryAgain}
+                            className="me-2"
+                        >
+                            Try Again
+                        </Button>
+                    )}
+                    <Button
+                        variant="outline-primary"
+                        onClick={handleReturnToCourse}
+                    >
+                        Back to Quizzes
+                    </Button>
+                </div>
             </div>
         </div>
     );

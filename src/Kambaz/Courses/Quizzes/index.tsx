@@ -123,21 +123,61 @@ export default function Quizzes() {
                                         <StudentProtected>
                                             {(() => {
                                                 const availability = getAvailability(quiz);
-                                                const hasReachedMaxAttempts = attempts[quiz._id] && attempts[quiz._id].attemptNumber >= (quiz.attempts_allowed || 1);
-                                                if (hasReachedMaxAttempts) {
+                                                const hasAttempts = attempts[quiz._id]; // Has any attempts
+                                                const hasReachedMaxAttempts = hasAttempts && attempts[quiz._id].attemptNumber >= (quiz.attempts_allowed || 1);
+                                                const attemptsRemaining = hasAttempts ? (quiz.attempts_allowed || 1) - attempts[quiz._id].attemptNumber : (quiz.attempts_allowed || 1);
+
+                                                // Case 1: Quiz is closed or not available yet (no attempts allowed)
+                                                if (availability && (availability === "Closed" || availability.includes("Not available until"))) {
                                                     return (
-                                                        <Link to={`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/results`} className="wd-assignment-link" style={{fontSize: '16px', fontWeight: '500'}}>
-                                                            {quiz.title}
-                                                        </Link>);
-                                                }
-                                                else {
-                                                    return (availability && (availability === "Closed" || availability.includes("Not available until") || hasReachedMaxAttempts)) ? (
                                                         <span className="wd-assignment-link" style={{fontSize: '16px', fontWeight: '500', color: 'gray'}}>
-                                                        {quiz.title}
-                                                            {/*   TODO LINK TO THE PREVIOUS ONE IF OUT OF TRIES????? <- Only this condition though */}
-                                                    </span>
-                                                    ) : (
-                                                        <Link to={`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/preview`} className="wd-assignment-link" style={{fontSize: '16px', fontWeight: '500'}}>
+                {quiz.title}
+            </span>);}
+                                                // Case 2: Student has reached max attempts (can only view results)
+                                                else if (hasReachedMaxAttempts) {
+                                                    return (
+                                                        <Link
+                                                            to={`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/results`}
+                                                            className="wd-assignment-link"
+                                                            style={{fontSize: '16px', fontWeight: '500'}}
+                                                        >
+                                                            {quiz.title} (View Results)
+                                                        </Link>
+                                                    );
+                                                }
+                                                // Case 3: Student has attempts but some remaining (can view previous or take again)
+                                                else if (hasAttempts && attemptsRemaining > 0) {
+                                                    return (
+                                                        <div>
+                                                            <Link
+                                                                to={`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/preview`}
+                                                                className="wd-assignment-link"
+                                                                style={{fontSize: '16px', fontWeight: '500'}}
+                                                            >
+                                                                {quiz.title}
+                                                            </Link>
+                                                            <div style={{fontSize: '14px'}}>
+                                                                <Link
+                                                                    to={`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/results`}
+                                                                    style={{marginRight: '10px'}}
+                                                                >
+                                                                    View Previous
+                                                                </Link>
+                                                                <span className="text-muted">
+                        {attemptsRemaining} {attemptsRemaining === 1 ? 'attempt' : 'attempts'} remaining
+                    </span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                                // Case 4: Quiz is available and no previous attempts (default case)
+                                                else {
+                                                    return (
+                                                        <Link
+                                                            to={`/Kambaz/Courses/${cid}/Quizzes/${quiz._id}/preview`}
+                                                            className="wd-assignment-link"
+                                                            style={{fontSize: '16px', fontWeight: '500'}}
+                                                        >
                                                             {quiz.title}
                                                         </Link>
                                                     );
