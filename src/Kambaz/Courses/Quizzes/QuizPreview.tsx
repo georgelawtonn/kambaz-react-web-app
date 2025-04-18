@@ -6,6 +6,7 @@ import FacultyProtected from '../../Account/FacultyProtected';
 import {Question, MultipleChoiceQuestion, TrueFalseQuestion, FillInBlankQuestion} from './Questions/QuestionTypes';
 import './QuizPreview.css';
 import {findQuestionsForQuiz} from './client';
+// import * as userClient from "../../Account/client.ts";
 
 export default function QuizPreview() {
     const navigate = useNavigate();
@@ -24,34 +25,63 @@ export default function QuizPreview() {
     const [questions, setQuestions] = useState<Question[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const loadQuizQuestions = async () => {
-            try {
-                if (qid) { // checking qid twice, but otherwise it gives me type error so ¯\_(ツ)_/¯
-                    setIsLoading(true);
-                    const questionData = await findQuestionsForQuiz(qid);
-                    console.log("Questions loaded:", questionData);
-                    setQuestions(questionData);
-                }
-            } catch (error) {
-                console.error("Error loading questions:", error);
-            } finally {
-                setIsLoading(false);
-            }
+    const convertDBQuestionToRedux = (dbQuestion : any) => {
+        const baseQuestion = {
+            id: dbQuestion._id,
+            title: dbQuestion.title,
+            type: dbQuestion.type,
+            points: dbQuestion.points,
+            question: dbQuestion.question,
+            isEditing: false,
+            isDraft: true
         };
 
-        if (qid) {
-            loadQuizQuestions();
+        switch (dbQuestion.type) {
+            case 'multiple_choice':
+                return {
+                    ...baseQuestion,
+                    choices: dbQuestion.choices || [],
+                    correctAnswer: dbQuestion.multipleChoiceAnswer
+                };
+            case 'true_false':
+                return {
+                    ...baseQuestion,
+                    correctAnswer: dbQuestion.trueFalseAnswer
+                };
+            case 'fill_in_blank':
+                return {
+                    ...baseQuestion,
+                    answers: dbQuestion.answers || []
+                };
+            default:
+                console.warn(`Unknown question type: ${dbQuestion.type}`);
+                return baseQuestion;
         }
+    };
+
+    const loadQuizQuestions = async () => {
+        if (!qid) return;
+        try {
+            setIsLoading(true);
+            const questionData = await findQuestionsForQuiz(qid);
+            const convertedQuestions = questionData.map((q : any) => convertDBQuestionToRedux(q));
+            setQuestions(convertedQuestions);
+        } catch (error) {
+            console.error("Error loading questions:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    useEffect(() => {
+        loadQuizQuestions();
     }, [qid]);
 
-    // Initialize answers
+
     useEffect(() => {
         if (quiz && quiz.questions) {
-            // Initialize empty answers for all questions
             const initialAnswers: Record<string, any> = {};
-            quiz.questions.forEach((q: Question) => {
-                initialAnswers[q.id] = null;
+            quiz.questions.forEach((q: any) => {
+                initialAnswers[q] = null;
             });
             setStudentAnswers(initialAnswers);
         }
@@ -133,7 +163,7 @@ export default function QuizPreview() {
         let totalPoints = 0;
         let earnedPoints = 0;
 
-        quiz.questions.forEach((question: Question) => {
+        questions.forEach((question: Question) => {
             const questionPoints = question.points || 1;
             totalPoints += questionPoints;
 
@@ -144,7 +174,7 @@ export default function QuizPreview() {
                 case 'multiple_choice':
                     const mcQuestion = question as MultipleChoiceQuestion;
                     // Convert both to same type for comparison (to number)
-                    isCorrect = Number(userAnswer) === Number(mcQuestion.correctAnswer);
+                    isCorrect = userAnswer !== null && Number(userAnswer) === Number(mcQuestion.correctAnswer);
                     break;
 
                 case 'true_false':
@@ -187,7 +217,7 @@ export default function QuizPreview() {
     const renderCurrentQuestion = () => {
         const question = currentQuestion;
         const answer = studentAnswers[question.id];
-        console.log(question.title, question.question, question.points);
+
         // Check if the answer is correct (when submitted)
         const isQuestionCorrect = isSubmitted && answer !== null && (() => {
             switch (question.type) {
@@ -386,12 +416,12 @@ export default function QuizPreview() {
                     </div>
 
                     <FacultyProtected>
-                    <Button
-                        variant="outline-secondary"
-                        onClick={handleKeepEditing}
-                    >
-                        <span>✏️ Keep Editing This Quiz</span>
-                    </Button>
+                        <Button
+                            variant="outline-secondary"
+                            onClick={handleKeepEditing}
+                        >
+                            <span>✏️ Keep Editing This Quiz</span>
+                        </Button>
                     </FacultyProtected>
                 </div>
             )}
